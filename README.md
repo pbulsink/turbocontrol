@@ -3,6 +3,7 @@
 TurboControl is a series of scripts to run Turbomole jobs from Gaussian style inputs.
 
 Contents:
+
 1.  Introduction
 2.  System Requirements
 3.  TurboGo
@@ -20,6 +21,7 @@ Gaussian software is well known for the user friendly GUI it contains (via Gauss
 ## 2.0 System Requirements
 There are two user-facing scripts available, both written to work with Turbomole 6.1 on clusters using Grid Engine queuing software.
 The only tests of operation are on a system with the following details:
+
 - Rocks 6.1 (Emerald Boa)/CentOS 6.3
 - Open Grid Scheduler/Grid Engine 2011.11p1
 - Python 2.7.3
@@ -27,6 +29,7 @@ The only tests of operation are on a system with the following details:
 Other systems, including different operating systems, different versions of Grid Engine or python, or on other systems, are not supported.
 
 Python dependencies include:
+
 - pexpect 3.0
 
 Prior to running TurboGo or TurboControl, a valid installation of Turbomole must be available. On systems where computational modules must be loaded, Turbomole must have been loaded to the environment. Additionally, running the Turbomole environment configuration is recommended but not required prior to launching TurboGo or TurboControl:
@@ -45,13 +48,17 @@ $ turbogo [-h] [-v] [-q] file
 ```
 
 positional arguments:
+
 file                  Read input from gaussian-type input FILE.
 
 More info on the input files is available in section 4.0, below.
 
 optional arguments:
+
 -h, --help            show this help message and exit
+
 -v, --verbose         Run more verbose (show debugging info)
+
 -q, --quiet           Run less verbose (show only warnings)
 
 TurboGo saves a log file (turbogo.log) in the directory in which it is run. A second logfile (define.log) will remain if the setup crashes or is terminated at some points, or if the script is run verbose.
@@ -67,8 +74,11 @@ $ turbocontrol [-h] [-v] [-q]
 ```
 
 optional arguments:
+
 -h, --help            show this help message and exit
+
 -v, --verbose         Run more verbose (show debugging info)
+
 -q, --quiet           Run less verbose (show only warnings)
 
 TurboControl outputs information every 3 hours on the status of the jobs. It writes a logfile (turbogo.log) and may or may not leave other log files in each directory (depending on verbosity level). Ends when the last job finishes or crashes. Requires 1 node or can be run on headnode (minimal resource consumption especially after initial job preparation and submission.)
@@ -82,35 +92,36 @@ The input file format is similar to that well known by Gaussian users. A series 
 ### 5.1 Keywords
 Keywords are as follows:
 
-%nproc          - number of processors to use for the calculation job.
-    Synonym: %nprocessors
-%arch           - parallelization architecture to use for the job.
-    Synonyms: %architecture %para_arch
-%maxcycles      - number of optimization iterations before failing.
-%autocontrolmod - DEFAULT - modify the 'control' file to include optimizations to speed up the job.
-%nocontrolmod   - do not modify control file as above.
+- %nproc          - number of processors to use for the calculation job.
+  - Synonym: %nprocessors
+- %arch           - parallelization architecture to use for the job.
+  - Synonyms: %architecture %para_arch
+- %maxcycles      - number of optimization iterations before failing.
+- %autocontrolmod - DEFAULT - modify the 'control' file to include optimizations to speed up the job.
+- %nocontrolmod   - do not modify control file as above.
 
 Gaussian args, including %nosave, %rwf=[file], %chk=[file], and %mem=[memory] are silently ignored.
 
 ### 5.2 Route Card Options
 Route cards take the form of the following:
+
 # [jobtype(s)] ([joboption(s)])
 
 Job types available:
 
-opt   - Perform a geometry optimization
-freq  - Perform a frequency analysis. Specify method via numforce or aoforce
-        - default = numforce
-prep  - Prepare the job but do not submit to queue
-        - cannot be combined with Opt or Freq
+- opt   - Perform a geometry optimization
+- freq  - Perform a frequency analysis. Specify method via numforce or aoforce  
+  - default = numforce
+- prep  - Prepare the job but do not submit to queue  
+  - cannot be combined with Opt or Freq
 
 Job options available:
 
-ri        - Use Turbomole's ri approximation 
-marij     - Use Turbomole's marij approximation (requires ri)
-disp      - Use Turbomole's implementation of Grimme's dispersion
-aoforce   - Use aoforce for frequency jobs
-numforce  - Use numforce for frequency jobs
+- ri        - Use Turbomole's ri approximation 
+- marij     - Use Turbomole's marij approximation (requires ri)
+- disp      - Use Turbomole's implementation of Grimme's dispersion
+- aoforce   - Use aoforce for frequency jobs
+- numforce  - Use numforce for frequency jobs
 
 ### 5.3 Title
 Following the Route cards, a blank line is added, then a line containing the title of the calculation. This can include any characters, spaces, etc., remaining on only one line. This is followed by a blank line.
@@ -138,6 +149,7 @@ Additional lines may be added, or lines removed, by placing them after the geome
 
 ###5.7 Example Input Files
 An example input file for benzene:
+
 ```
 %nproc=4
 %arch=GA
@@ -237,5 +249,4 @@ def_op.py               - 8.23/10
 def_op_test.py          - 6.11/10
 screwer_op.py           - 7.36/10
 screwer_op_test.py      - 6.67/10
-
 
