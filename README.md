@@ -49,17 +49,18 @@ $ turbogo [-h] [-v] [-q] file
 
 positional arguments:
 
+```
 file                  Read input from gaussian-type input FILE.
+```
 
 More info on the input files is available in section 4.0, below.
 
 optional arguments:
-
+```
 -h, --help            show this help message and exit
-
 -v, --verbose         Run more verbose (show debugging info)
-
 -q, --quiet           Run less verbose (show only warnings)
+```
 
 TurboGo saves a log file (turbogo.log) in the directory in which it is run. A second logfile (define.log) will remain if the setup crashes or is terminated at some points, or if the script is run verbose.
 
@@ -75,11 +76,11 @@ $ turbocontrol [-h] [-v] [-q]
 
 optional arguments:
 
+```
 -h, --help            show this help message and exit
-
 -v, --verbose         Run more verbose (show debugging info)
-
 -q, --quiet           Run less verbose (show only warnings)
+```
 
 TurboControl outputs information every 3 hours on the status of the jobs. It writes a logfile (turbogo.log) and may or may not leave other log files in each directory (depending on verbosity level). Ends when the last job finishes or crashes. Requires 1 node or can be run on headnode (minimal resource consumption especially after initial job preparation and submission.)
 
@@ -105,7 +106,7 @@ Gaussian args, including %nosave, %rwf=[file], %chk=[file], and %mem=[memory] ar
 ### 5.2 Route Card Options
 Route cards take the form of the following:
 
-# [jobtype(s)] ([joboption(s)])
+\# [jobtype(s)] [joboption(s)]
 
 Job types available:
 
@@ -180,22 +181,22 @@ $disp
 
 ## 6.0 Known Issues
 Current Known issues are:
--   
+- 
 
 Won't Fix includes:
--   Software doesn't avoid lone proton jobs (H+), but crashes them out
+- Software doesn't avoid lone proton jobs (H+), but crashes them out
 
 
 ## 7.0 ToDo
 High Priority:
--   
+- 
     
 Medium Priority:
--   Transition state and TD-DFT calculations may require expansion of the def-op script or modification of input files.
+- Transition state and TD-DFT calculations may require expansion of the def-op script or modification of input files.
     
 Low Priority:
--   Presentation of badly formatted input files to allow for modification and resubmission to reduce loss by typo
--   Expand inclusion of more basis sets, mix basis sets for different atoms.
+- Presentation of badly formatted input files to allow for modification and resubmission to reduce loss by typo
+- Expand inclusion of more basis sets, mix basis sets for different atoms.
 
 
 ## 8.0 License
