@@ -181,7 +181,7 @@ $disp
 
 ## 6.0 Known Issues
 Current Known issues are:
-- 
+- none
 
 Won't Fix includes:
 - Software doesn't avoid lone proton jobs (H+), but crashes them out
@@ -189,10 +189,10 @@ Won't Fix includes:
 
 ## 7.0 ToDo
 High Priority:
-- 
+- Transition state and TD-DFT calculations may require expansion of the def-op script or modification of input files.
     
 Medium Priority:
-- Transition state and TD-DFT calculations may require expansion of the def-op script or modification of input files.
+- none
     
 Low Priority:
 - Presentation of badly formatted input files to allow for modification and resubmission to reduce loss by typo
