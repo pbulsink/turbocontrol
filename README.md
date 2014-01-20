@@ -1,4 +1,4 @@
-# TURBOCONTROL and TURBOGO 1.0
+# TURBOCONTROL and TURBOGO 1.0.1
 
 TurboControl is a series of scripts to run Turbomole jobs from Gaussian style inputs.
 

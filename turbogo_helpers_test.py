@@ -223,6 +223,7 @@ class TestRoute(unittest.TestCase):
         self.oneoptroute = '# opt TZVP'
         self.multijobroute = '# opt b3-lyp TZVP ri marij disp'
         self.multijobslash = '# opt b3-lyp/TZVP ri marij disp'
+        self.lowercase = '# def2-tzvp'
 
     def test_jobroute(self):
         """Test a job"""
@@ -281,6 +282,13 @@ class TestRoute(unittest.TestCase):
         the_exception = cm.exception
         self.assertEqual(the_exception.msg,
                          "More than one jobtype in route. Remove duplicates.")
+
+    def test_lowercaseroute(self):
+        """Test a lowercase route"""
+        result = {
+            'basis': 'def2-TZVP'
+        }
+        self.assertEqual(check_route(self.lowercase), result)
 
 class TestChSpin(unittest.TestCase):
     """Test the chspin tester"""

@@ -10,7 +10,7 @@ Input files are formatted as gaussian, with additional/alternative keywords.
 import argparse
 import time
 import logging
-
+import sys
 from subprocess import Popen, PIPE
 
 import def_op
@@ -420,7 +420,6 @@ def jobrunner(infile = None, job = None):
     """
     run the job prep and submit from a specific file or supplied prepared job
     """
-    logging.debug('Working with {}.'.format(str(infile)))
     starttime = time.time()
     if not job:
         if infile:
@@ -430,6 +429,7 @@ def jobrunner(infile = None, job = None):
             logging.critical('Job input file or prepared job must be supplied.')
             raise JobLogicError(
                 "No input file or supplied prepared job to submit.")
+    logging.debug('Working with {}.'.format(job.name))
     write_coord(job)
     logging.debug('coord written')
     if job.jobtype == 'opt' or job.jobtype == 'optfreq':
@@ -474,6 +474,8 @@ def main():
     group.add_argument('-q', '--quiet', action="store_true",
                         help='Run less verbose (show only warnings)')
     args = parser.parse_args()
+
+    ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(logging.INFO)
     if args.verbose:
         ch.setLevel(logging.DEBUG)

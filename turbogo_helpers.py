@@ -22,8 +22,8 @@ ELEMENTS = ['Ac', 'Ag', 'Al', 'Am', 'Ar', 'As', 'At', 'Au', 'B', 'Ba', 'Be',
             'Tb', 'Tc', 'Te', 'Th', 'Ti', 'Tl', 'Tm', 'U', 'Uuo', 'Uup', 'Uus',
             'Uut', 'V', 'W', 'Xe', 'Y', 'Yb', 'Zn', 'Zr']
 
-ARGLIST = ['nproc', 'nprocessors', 'arch', 'architecture', 'para_arch',
-           'maxcycles', 'nocontrolmod', 'autocontrolmod']
+ARGLIST = ['nproc', 'nprocessors', 'nprocshared', 'arch', 'architecture',
+           'para_arch', 'maxcycles', 'nocontrolmod', 'autocontrolmod']
 DISCARDARGLIST = ['nosave', 'rwf', 'chk', 'mem']
 ROUTELIST = ['opt', 'freq', 'ts', 'td', 'prep']
 FREQOPTS = ['aoforce', 'numforce']
@@ -41,7 +41,6 @@ BASIS = ['SV', 'SVP', 'SV(P)', 'def-SVP', 'def2-SVP', 'def-SV(P)', 'def2-SV(P)',
          '(11s7p)[6s4p]', '(13s8p)[8s5p]', '10s6p-dun', '10s6p1d-dun',
          '10s6p2d-dun', '6-31G*', '6-311G', '6-311G*', '6-311G**',
          '6-311++G**']
-
 
 class Error(Exception):
     """Base class for exceptions in this module."""
@@ -158,7 +157,8 @@ def check_args(iargs):
                             .format(arg[1])
                         )
 
-            elif arg[0] == 'nproc' or arg[0] == 'nprocessors':
+            elif (arg[0] == 'nproc' or arg[0] == 'nprocessors' or
+                  arg[0] == 'nprocshared'):
                 if is_positive_int(arg[1]):
                     if int(arg[1]) < 9:
                         args[arg[0].lower()] = arg[1]
@@ -292,11 +292,31 @@ def check_route(route):
                         )
                     )
         elif item.lower() not in DISCARDROUTEOPTS:
-            logging.warning("Unknown item '{}' in route".format(item))
-            raise InputCheckError(
-                route,
-                "Syntax error. Unknown keyword '{}' in route.".format(item)
-                )
+            lowered = False
+            for base in BASIS:
+                if (item.lower() == base.lower() or
+                    item.lower() == base.lower().replace('-','')):
+                    if not 'basis' in route_opts:
+                        route_opts['basis'] = base
+                        lowered = True
+                    else:
+                        logging.warning("Basis '{}' and '{}' called".format(
+                            item,
+                            route_opts['basis']
+                            ))
+                        raise InputCheckError(
+                            route,
+                            "More than one basis in route. Remove Duplicates.".format(
+                                route_opts['basis'],
+                                item
+                                )
+                            )
+            if not lowered:
+                logging.warning("Unknown item '{}' in route".format(item))
+                raise InputCheckError(
+                    route,
+                    "Syntax error. Unknown keyword '{}' in route.".format(item)
+                    )
 
     return route_opts
 
