@@ -9,7 +9,7 @@ prepare for frequency analysis via NumForce or aoforce.
 from turbogo import jobrunner, check_input_file, submit_script_prepare
 from turbogo import JobLogicError, submit_job
 import turbogo_helpers
-import os, sys
+import os, sys, shutil
 from time import sleep, strftime, time
 from datetime import timedelta
 import logging
@@ -253,6 +253,7 @@ def ensure_not_ts(job):
                     readin = True
             if job.freqopt == 'numforce':
                 os.chdir(os.pardir)
+                shutil.rmtree(os.join(os.curdir, 'numforce'))
             turbogo_helpers.write_file('coord', newcoord)
             try:
                 job.job.jobtype = 'optfreq'

@@ -224,6 +224,10 @@ def jobsetup(infile):
         job.functional = route['functional']
     if 'jobtype' in route:
         job.jobtype = route['jobtype']
+    if job.jobtype == 'opt' or job.jobtype == 'optfreq':
+        #one atom checking - can't opt one atom, so single point it.
+        if len(geom) == 1 and job.jobtype:
+            job.jobtype = 'sp'
     if 'freqopts' in route:
         job.freqopts = route['freqopts']
     elif job.jobtype == 'freq' and not 'freqopts' in route:
@@ -334,6 +338,13 @@ export HOSTS_FILE=`readlink -f hosts_file`
         if job.nproc > 1:
             jobcommand += ' -mfile'
         jobcommand += ' > numforce.out'
+
+    elif job.jobtype == 'sp':
+        if job.ri:
+            jobcommand = 'ridft'
+        else:
+            jobcommand = 'dscf'
+        jobcommand += ' > sp.out'
 
     elif job.jobtype == 'ts':
         jobcommand = 'jobex -trans'

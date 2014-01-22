@@ -1,4 +1,4 @@
-# TURBOCONTROL and TURBOGO 1.0.1
+# TURBOCONTROL and TURBOGO 1.1.0
 
 TurboControl is a series of scripts to run Turbomole jobs from Gaussian style inputs.
 
@@ -113,6 +113,8 @@ Job types available:
 - opt   - Perform a geometry optimization
 - freq  - Perform a frequency analysis. Specify method via numforce or aoforce  
   - default = numforce
+- sp    - Perform a single point energy calculation.
+  - cannot be combined with Opt or Freq
 - prep  - Prepare the job but do not submit to queue  
   - cannot be combined with Opt or Freq
 

@@ -25,7 +25,7 @@ ELEMENTS = ['Ac', 'Ag', 'Al', 'Am', 'Ar', 'As', 'At', 'Au', 'B', 'Ba', 'Be',
 ARGLIST = ['nproc', 'nprocessors', 'nprocshared', 'arch', 'architecture',
            'para_arch', 'maxcycles', 'nocontrolmod', 'autocontrolmod']
 DISCARDARGLIST = ['nosave', 'rwf', 'chk', 'mem']
-ROUTELIST = ['opt', 'freq', 'ts', 'td', 'prep']
+ROUTELIST = ['opt', 'freq', 'ts', 'td', 'prep', 'sp']
 FREQOPTS = ['aoforce', 'numforce']
 ROUTEOPTS = ['ri', 'marij', 'disp', 'disp3', 'tight', 'loose']
 DISCARDROUTEOPTS = ['guess=indo', 'newestmfc', 'gfinput' 'pop=full']
