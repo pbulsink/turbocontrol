@@ -31,6 +31,7 @@ Other systems, including different operating systems, different versions of Grid
 Python dependencies include:
 
 - pexpect 3.0
+- openbabel (optional)
 
 Prior to running TurboGo or TurboControl, a valid installation of Turbomole must be available. On systems where computational modules must be loaded, Turbomole must have been loaded to the environment. Additionally, running the Turbomole environment configuration is recommended but not required prior to launching TurboGo or TurboControl:
 
@@ -63,6 +64,8 @@ optional arguments:
 ```
 
 TurboGo saves a log file (turbogo.log) in the directory in which it is run. A second logfile (define.log) will remain if the setup crashes or is terminated at some points, or if the script is run verbose.
+
+TurboGo writes the final coordinates to finalgeom.xyz. If openbabel is installed, it will also write finalgeom.mol. The entire optimization is written to optimization.xyz for viewing with a molecular viewer, such as vmd.
 
 
 ##4.0 TurboControl

@@ -510,7 +510,7 @@ def main():
     if not args.verbose:
         try:
             os.remove(os.path.join(os.path.curdir, 'define.log'))
-        except OSError:
+        except (OSError, IOError):
             pass
     logging.debug('Jobid: {}\nFreqStatus: {}'.format(jobid, freqopts))
     exit()

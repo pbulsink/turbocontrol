@@ -16,6 +16,12 @@ import logging
 import argparse
 from screwer_op import Screwer
 
+try:
+    import openbabel
+    from formatter import convert_filetype
+    reformat = True
+except ImportError:
+    reformat = False
 
 class Error(Exception):
     """Base class for exceptions in this module."""
@@ -85,7 +91,9 @@ def find_inputs():
     alldirs = os.walk(os.curdir).next()[1]
     #find files in dir
     for d in alldirs:
-        files = [f for f in os.listdir(d) if f.endswith('.in')]
+        files = [f for f in os.listdir(d) if (f.endswith('.in')
+                                              or f.endswith('.gjf')
+                                              or f.endswith('.com'))]
         filetree[d] = files
 
     multidir = list()
@@ -143,6 +151,9 @@ def check_opt(job):
                 job.status = "Freq Setup Failed"
                 return 'fcrashed'
         else:
+            if reformat:
+                convert_filetype(os.path.join(job.indir, 'finalgeometry.xyz'),
+                                 os.path.join(job.indir, 'finalgeometry.mol'))
             return 'completed'
 
     else:
@@ -167,11 +178,12 @@ def check_freq(job):
     try:
         with open(filetoread, 'r') as f:
             endstatus = f.readlines()[-5]
-    except OSError as e:
+    except (OSError, IOError) as e:
         endstatus = ''
         logging.info(
             "Error {} reading aoforce.out for {}".format(
                 e, job.indir))
+
     else:
         if "   ****  force : all done  ****" in endstatus:
             job.ftime = job.ftime + (time() - job.curstart)
@@ -335,7 +347,7 @@ def write_stats(job):
                 energy = energy,
             ))
             f.write('\n')
-    except OSError as e:
+    except (OSError, IOError) as e:
         logging.warning("Error writing stats file: {}".format(e))
 
 def watch_jobs(jobs):
@@ -599,7 +611,7 @@ def main():
         if not args.verbose:
             try:
                 os.remove(os.path.join(key, 'define.log'))
-            except OSError:
+            except (OSError, IOError):
                 pass
         jobs.append(job)
 
