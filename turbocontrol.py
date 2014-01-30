@@ -23,6 +23,9 @@ try:
 except ImportError:
     reformat = False
 
+TOPDIR = os.path.abspath(os.path.dirname(os.curdir))
+
+
 class Error(Exception):
     """Base class for exceptions in this module."""
     pass
@@ -76,7 +79,7 @@ class Jobset():
             self.job = None
             self.freqopt = None
             self.status = "Submit Failed: {}".format(e)
-        os.chdir(os.pardir)
+        os.chdir(TOPDIR)
 
 
 def find_inputs():
@@ -87,14 +90,19 @@ def find_inputs():
     inputdirs = list()
     filetree = dict()
 
-    #find dirs
-    alldirs = os.walk(os.curdir).next()[1]
-    #find files in dir
-    for d in alldirs:
-        files = [f for f in os.listdir(d) if (f.endswith('.in')
-                                              or f.endswith('.gjf')
-                                              or f.endswith('.com'))]
-        filetree[d] = files
+    results = list()
+    #find files in dirs:
+    for dir, _, filenames in os.walk(os.curdir):
+        for file in filenames:
+            fileExt = os.path.splitext(file)[-1]
+            if fileExt == '.in':
+                results.append(os.path.join(dir,file))
+
+    for r in results:
+        if os.path.dirname(r) in filetree:
+            filetree[os.path.dirname(r)].append(os.path.basename(r))
+        else:
+            filetree[os.path.dirname(r)] = [os.path.basename(r)]
 
     multidir = list()
     badinput = list()
@@ -247,9 +255,7 @@ def ensure_not_ts(job):
             except Exception as e:
                 logging.warning("Error '{}' running screwer on job {}.".format(
                     e, job.name))
-                if job.freqopt == 'numforce':
-                    os.chdir(os.pardir)
-                os.chdir(os.pardir)
+                os.chdir(TOPDIR)
                 return "error"
             control = turbogo_helpers.read_clean_file('control')
             newcoord = list()
@@ -274,9 +280,9 @@ def ensure_not_ts(job):
             except Exception as e:
                 logging.warning("Error {} resubmitting job {}.".format(
                     e, job.name))
-                os.chdir(os.pardir)
+                os.chdir(TOPDIR)
                 return 'error'
-            os.chdir(os.pardir)
+            os.chdir(TOPDIR)
             return 'opt'
         else:
             return 'completed'
@@ -559,7 +565,7 @@ def freq_submit(job):
         return -99
     logging.info("Job {} submitted for {} analysis"
                  .format(job.name, job.freqopt))
-    os.chdir(os.pardir)
+    os.chdir(TOPDIR)
     return jobid
 
 

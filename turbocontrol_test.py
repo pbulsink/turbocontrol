@@ -271,6 +271,8 @@ class TestFindInputs(unittest.TestCase):
         os.mkdir('indir-badfile3')
         os.mkdir('indir-nofile4')
         os.mkdir('indir-twofile5')
+        os.mkdir('indir-deep')
+        os.mkdir(os.path.join('indir-deep', 'deepdir'))
         self.infile = """%nproc=8
 %mem=100MW
 %arch=GA
@@ -303,6 +305,11 @@ $ricore_slave 1
         write_file('input5a.in', self.infile.split('\n'))
         write_file('input5b.in', self.infile.split('\n'))
         os.chdir(os.pardir)
+        os.chdir('indir-deep')
+        os.chdir('deepdir')
+        write_file('input6.in', self.infile.split('\n'))
+        os.chdir(os.pardir)
+        os.chdir(os.pardir)
 
     def tearDown(self):
         try:
@@ -330,6 +337,12 @@ $ricore_slave 1
             os.rmdir(path.join(path.curdir, 'indir-twofile5'))
         except OSError:
             pass
+        try:
+            os.remove(path.join(path.curdir, 'indir-deep', 'deepdir', 'input6.in'))
+            os.rmdir(path.join(path.curdir, 'indir-deep', 'deepdir'))
+            os.rmdir(path.join(path.curdir, 'indir-deep'))
+        except OSError:
+            pass
         os.chdir(os.pardir)
         try:
             os.rmdir('testdir')
@@ -339,6 +352,7 @@ $ricore_slave 1
     def test_find_inputs(self):
         """Test finding inputs with various problems being handled"""
         codeanswer = find_inputs()
+        keys = ['./indir-twofile5', './indir-good2', './indir-deep/deepdir', './indir-good1']
         for key in codeanswer:
             self.assertEqual(isinstance(codeanswer[key][1], Job), True)
 
