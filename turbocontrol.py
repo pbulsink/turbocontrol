@@ -403,6 +403,15 @@ def watch_jobs(jobs):
 
     while not allcomplete:
         alljobs = turbogo_helpers.get_all_active_jobs()
+        if len(alljobs) == 0 and (len(orunning) > 0 or len(frunning) > 0):
+            #possible fail at getting jobs from queue
+            sleep(60)
+            alljobs = turbogo_helpers.get_all_active_jobs()
+            if len(alljobs) == 0:
+                #One more try
+                sleep(300)
+                alljobs = turbogo_helpers.get_all_active_jobs()
+
         checkojobs = list(orunning)
         checkfjobs = list(frunning)
 
