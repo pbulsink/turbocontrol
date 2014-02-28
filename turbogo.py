@@ -447,7 +447,7 @@ def jobrunner(infile = None, job = None):
     logging.debug('Working with {}.'.format(job.name))
     write_coord(job)
     logging.debug('coord written')
-    if job.jobtype == 'opt' or job.jobtype == 'optfreq':
+    if job.jobtype == 'opt' or job.jobtype == 'optfreq' or job.jobtype == 'ts':
         defstart = time.time()
         run_define(job)
         logging.debug('define complete.')
@@ -509,7 +509,7 @@ def main():
         logging.critical('Input file {} does not exist.'.format(infile))
         exit()
     #file is good. let's go!
-    jobid, freqopts, _name = jobrunner(infile = infile)
+    jobid, freqopts, _name, _type = jobrunner(infile = infile)
     if not args.verbose:
         try:
             os.remove(os.path.join(os.path.curdir, 'define.log'))

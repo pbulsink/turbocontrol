@@ -65,6 +65,8 @@ class Define():
             logging.debug("Define instance spawned and active.")
 
         self.define.timeout = self.timeout
+        fout = file('mylog.txt','w')
+        self.define.logfile = fout
 
     def make_parameters (self, job):
         """Convert job parameters into define parameters"""
@@ -154,7 +156,7 @@ class Define():
             self.define.sendline('a coord')
             self.define.expect('CARTESIAN COORDINATES FOR ')
             logging.debug('Coordinates imported.')
-            if gparams['jobtype'] != 'ts':
+            if self.gparams['jobtype'] != 'ts':
                 #uff
                 self.define.expect('IF YOU APPEND A QUESTION MARK TO ANY COMMAND')
                 self.define.sendline('ff')
@@ -182,7 +184,6 @@ class Define():
         #b all {{basis}}
         try:
             self.define.sendline('b all {}'.format(self.bparams['basis']))
-            out = self.define.expect('ATOMIC ATTRIBUTE DEFINITION MENU')
         except Exception as e:
             raise DefineError('Error in setting basis set. Error {}'.format(e))
         logging.debug("Basis sets applied.")
@@ -356,15 +357,17 @@ class Define():
             try:
                 self.define.sendline('*')
                 logging.debug('* sent to leave geom')
-                out = self.define.expect(['DO YOU WANT TO CHANGE THESE DATA', 'IF YOU DO NOT WANT TO USE INTERNAL', 'ATOMIC ATTRIBUTE DEFINITION MENU'])
+                out = self.define.expect(['DO YOU WANT TO CHANGE THESE DATA', 'IF YOU DO NOT WANT TO USE INTERNAL COORDINATES ENTER  no', 'ATOMIC ATTRIBUTE DEFINITION MENU'])
                 if out == 0:
                     self.define.sendline('y')
                     logging.debug('Atomic attribute data overwrite selected')
                     out = self.define.expect('ATOMIC ATTRIBUTE DEFNIITION DATA')
-                if out == 2:
+                elif out == 1:
                     self.define.sendline('no')
                     logging.debug('Do not use internal coordinate selected')
-                    out = self.define.expect('ATOMIC ATTRIBUTE DEFNIITION DATA')
+                    out = self.define.expect(' GOBACK=& (TO GEOMETRY MENU !)')
+                elif out == 2:
+                    logging.debug('In Atomic Attribute Menu')
             except Exception as e:
                 raise DefineError('Error in moving to basis. Error {}'.format(e))
         elif leaving == 'basis':
