@@ -85,6 +85,10 @@ class Job():
         self.basis = basis
         self.functional = functional
         self.jobtype = jobtype
+        if jobtype == 'ts':
+            self.ts = True
+        else:
+            self.ts = False
         self.iterations = iterations
         self.charge = charge
         self.spin = spin
@@ -336,7 +340,7 @@ export HOSTS_FILE=`readlink -f hosts_file`
         if job.ri:
             jobcommand += ' -ri'
         if job.nproc > 1:
-            jobcommand += ' -mfile'
+            jobcommand += ' -mfile hosts_file'
         jobcommand += ' > numforce.out'
 
     elif job.jobtype == 'sp':
@@ -347,14 +351,14 @@ export HOSTS_FILE=`readlink -f hosts_file`
         jobcommand += ' > sp.out'
 
     elif job.jobtype == 'ts':
-        jobcommand = 'jobex -trans'
-        jobcommand += ' -c {}'.format(job.iterations)
         if job.ri:
-            jobcommand += ' -ri'
+            jobcommand = 'ridft\nrdgrad\njobex -trans -ri'
+        else:
+            jobcommand = 'dscf\ngrad\njobex -trans'
         jobcommand += ' > ts.out'
 
     logging.debug('Job submit script: {} completed.'.format(
-        jobcommand.replace('\n', ' -&- ')))
+        jobcommand.replace('\n', ' & ')))
 
     #make one big sumbit script
     #runs the jobcommand
@@ -373,7 +377,7 @@ source $TURBODIR/Config_turbo_env
 ulimit -s unlimited
 
 {jobcommand}
-        """.format(
+""".format(
             jobname=turbogo_helpers.slug(job.name),
             nproc=job.nproc,
             parallel_preamble=parallel_preamble,
@@ -457,7 +461,6 @@ def jobrunner(infile = None, job = None):
                 )
             raise JobLogicError("Convergence required before {} job.".format(
                 job.jobtype))
-
     control_edit(job)
     logging.debug('control file editing complete.')
     script = submit_script_prepare(job)
@@ -467,7 +470,7 @@ def jobrunner(infile = None, job = None):
     else:
         logging.info('Job not submitted - prep flag in input.')
     logging.debug("Submitted in {} seconds.".format(time.time() - starttime))
-    return jobid, job.freqopts, job.name
+    return jobid, job.freqopts, job.name, job.jobtype
 
 def main():
     """Manages the code"""

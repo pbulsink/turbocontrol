@@ -86,6 +86,10 @@ class Define():
             self.fparams['m'] = 3200
         if job.marij:
             self.fparams['marij'] = True
+        if job.jobtype == 'ts':
+            self.gparams['jobtype'] = 'ts'
+        else:
+            self.gparams['jobtype'] = 'freqopt'
         self.fparams['func'] = job.functional
 
     def run_define(self):
@@ -150,24 +154,25 @@ class Define():
             self.define.sendline('a coord')
             self.define.expect('CARTESIAN COORDINATES FOR ')
             logging.debug('Coordinates imported.')
-            #uff
-            self.define.expect('IF YOU APPEND A QUESTION MARK TO ANY COMMAND')
-            self.define.sendline('ff')
-            self.define.expect('Enter UFF-options to be modified')
-            if 'charge' in self.gparams:
-                self.define.sendline('c ' + str(self.gparams['charge']))
-            self.define.sendline('')
-            self.define.expect('UFF ended normally')
-            logging.debug('Uff done.')
-            #desy
-            self.define.expect('IF YOU APPEND A QUESTION MARK TO ANY COMMAND')
-            self.define.sendline('desy')
-            self.define.expect('symmetry operations found')
-            logging.debug('Desy done.')
-            #ired
-            self.define.expect('IF YOU APPEND A QUESTION MARK TO ANY COMMAND')
-            self.define.sendline('ired')
-            logging.debug('Ired done.')
+            if gparams['jobtype'] != 'ts':
+                #uff
+                self.define.expect('IF YOU APPEND A QUESTION MARK TO ANY COMMAND')
+                self.define.sendline('ff')
+                self.define.expect('Enter UFF-options to be modified')
+                if 'charge' in self.gparams:
+                    self.define.sendline('c ' + str(self.gparams['charge']))
+                self.define.sendline('')
+                self.define.expect('UFF ended normally')
+                logging.debug('Uff done.')
+                #desy
+                self.define.expect('IF YOU APPEND A QUESTION MARK TO ANY COMMAND')
+                self.define.sendline('desy')
+                self.define.expect('symmetry operations found')
+                logging.debug('Desy done.')
+                #ired
+                self.define.expect('IF YOU APPEND A QUESTION MARK TO ANY COMMAND')
+                self.define.sendline('ired')
+                logging.debug('Ired done.')
             logging.debug('Geometry setup complete.')
         except Exception as e:
             raise DefineError('Error in setting up geometry. Error {}'.format(e))
@@ -273,13 +278,12 @@ class Define():
         if 'ri' in self.fparams:
             self._ri()
             logging.debug('RI done.')
-        else:
-            logging.debug('No RI required.')
         if 'marij' in self.fparams:
             self._marij()
             logging.debug('MARIJ done.')
-        else:
-            logging.debug('No MARIJ required.')
+        if self.gparams['jobtype'] == 'ts':
+            self._stp()
+            logging.debug('STP modified for TS job')
         logging.debug('Functional paramters applied.')
 
     def _dft(self):
@@ -327,6 +331,23 @@ class Define():
         except Exception as e:
             raise DefineError('Error in marij preparation. Error {}'.format(e))
 
+    def _stp(self):
+        """Work the STP menu"""
+        try:
+            self.define.expect("END OF DEFINE")
+            self.define.sendline('stp')
+            self.define.expect("ENTER STATPT-OPTIONS TO BE MODIFIED")
+            self.define.sendline('on')
+            self.define.expect("ENTER STATPT-OPTIONS TO BE MODIFIED")
+            self.define.sendline('itvc')
+            self.define.expect("Enter index of transition vector.")
+            self.define.sendline('1')
+            self.define.sendline('')
+            logging.debug('STP set with itvc = 1')
+        except Exception as e:
+            raise DefineError('Error in STP prepareation. Error {}'.format(e))
+    
+
     def _next(self, leaving = None):
         """
         Pass the next menu command to define, maybe checking for passed result
@@ -335,10 +356,14 @@ class Define():
             try:
                 self.define.sendline('*')
                 logging.debug('* sent to leave geom')
-                out = self.define.expect(['DO YOU WANT TO CHANGE THESE DATA', 'ATOMIC ATTRIBUTE DEFINITION MENU'])
+                out = self.define.expect(['DO YOU WANT TO CHANGE THESE DATA', 'IF YOU DO NOT WANT TO USE INTERNAL', 'ATOMIC ATTRIBUTE DEFINITION MENU'])
                 if out == 0:
                     self.define.sendline('y')
                     logging.debug('Atomic attribute data overwrite selected')
+                    out = self.define.expect('ATOMIC ATTRIBUTE DEFNIITION DATA')
+                if out == 2:
+                    self.define.sendline('no')
+                    logging.debug('Do not use internal coordinate selected')
                     out = self.define.expect('ATOMIC ATTRIBUTE DEFNIITION DATA')
             except Exception as e:
                 raise DefineError('Error in moving to basis. Error {}'.format(e))

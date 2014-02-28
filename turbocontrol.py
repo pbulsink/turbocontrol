@@ -64,6 +64,7 @@ class Jobset():
         self.ftime = 0
         self.curstart = 0
         self.firstfreq = None
+        self.ts = False
 
     def submit(self):
         """
@@ -72,8 +73,14 @@ class Jobset():
         """
         os.chdir(self.indir)
         try:
-            self.jobid, self.freqopt, self.name = jobrunner(job = self.job)
-            self.status = "Opt Submitted"
+            self.jobid, self.freqopt, self.name, self.jobtype = jobrunner(job=self.job)
+            if self.jobtype == 'opt' or self.jobtype == 'optfreq':
+                self.status = "Opt Submitted"
+            elif self.jobtype == 'numforce' or self.jobtype == 'aoforce':
+                self.status = "Freq Submitted"
+            elif self.jobtype == 'ts':
+                self.status = 'TS Submitted'
+                self.ts = True
         except Exception as e:
             self.jobid = None
             self.job = None
@@ -197,7 +204,10 @@ def check_freq(job):
             job.ftime = job.ftime + (time() - job.curstart)
             logging.info('Job {} completed frequency.'.format(job.name))
             job.status = "Completed Freq"
-            status = ensure_not_ts(job)
+            if not job.ts:
+                status = ensure_not_ts(job)
+            else:
+                status = ensure_ts(job)
             if status == 'completed':
                 return 'completed'
             elif status == 'error':
@@ -206,6 +216,10 @@ def check_freq(job):
                 return 'opt'
             elif status == 'same':
                 return 'same'
+            elif status == 'imaginary':
+                return 'imaginary'
+            elif status == 'ts':
+                return 'ts'
         else:
             job.status = "Freq Crashed"
             return 'fcrashed'
@@ -286,6 +300,55 @@ def ensure_not_ts(job):
             return 'opt'
         else:
             return 'completed'
+    else:
+        logging.warning(
+            'Error getting vibrational frequencies from job {}.'.format(
+            job.name
+        ))
+        return 'error'
+
+
+def ensure_ts(job):
+    """
+    This runs to read out the vibrational modes. If there are more than one negative,
+    run screwer to adjust the geometry along the imaginary coordinate, and
+    resubmits job.
+    """
+    if job.freqopt == 'numforce':
+        newdir = os.path.join(job.indir, 'numforce')
+    else:
+        newdir = job.indir
+    filetoread = os.path.join(newdir, 'control')
+
+    controlfile = turbogo_helpers.read_clean_file(filetoread)
+
+    vib = False
+    vib2 = False
+
+    for i in range(len(controlfile)):
+        if '$vibrational spectrum' in controlfile[i]:
+            for j in range (i+3, len(controlfile)):
+                col = controlfile[j][15:34].strip()
+                if col != '0.00':
+                    try:
+                        if not vib:
+                            vib = float(col)
+                        elif not vib2:
+                            vib2 = float(col)
+                    except ValueError:
+                        pass
+                    else:
+                        mode = controlfile[j][:6].strip()
+        if vib2:
+            break
+
+    if vib and vib2:
+        if vib < 0 and vib2 > 0:
+            return 'ts'
+        elif vib1 > 0:
+            return 'opt'
+        elif vib2 < 0:
+            return 'imaginary'  # itvc = 1 SHOULD only ever return 1 img. freq
     else:
         logging.warning(
             'Error getting vibrational frequencies from job {}.'.format(
@@ -378,11 +441,15 @@ def watch_jobs(jobs):
     starttime = time()
 
     for job in jobs:
-        if job.status == 'Opt Submitted':
+        if job.status == 'Opt Submitted' or job.status == 'TS Submitted':
             orunning.append(job.jobid)
+            jobdict[job.jobid] = job
+        elif job.status == 'Freq Submitted':
+            frunning.append(job.jobid)
             jobdict[job.jobid] = job
         else:
             failed_submit.append(job.name + ' - ' + job.status)
+        
 
     logging.info('There are {} jobs being watched.'.format(
         len(jobdict)
@@ -485,12 +552,18 @@ def watch_jobs(jobs):
                     logging.debug("Job {} crashed restarting opt.".format(
                         job.name
                     ))
-                elif status == 'same':
+                elif status == 'same' or status == 'imaginary':
                     stuck.append(job.name)
                     write_stats(job)
                     logging.info(
                         "Job {} stuck on transition state with freq {}.".format(
                             job.name, job.firstfreq))
+                elif status == 'ts':
+                    write_stats(job)
+                    completed.append(job.name)
+                    logging.debug("Job {} completed ts.".format(
+                        job.name
+                    ))
                 else:
                     write_stats(job)
                     completed.append(job.name)
