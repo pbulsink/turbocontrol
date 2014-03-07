@@ -81,6 +81,8 @@ class Jobset():
             elif self.jobtype == 'ts':
                 self.status = 'TS Submitted'
                 self.ts = True
+                if not self.freqopt:
+                    self.freqopt = 'numforce'
         except Exception as e:
             self.jobid = None
             self.job = None
@@ -91,7 +93,7 @@ class Jobset():
 
 def find_inputs():
     """
-    Finds the inputs in subdirs. Verifies the appropriateness quality of
+    Finds the inputs in subdirs. Verifies the appropriateness of
     each input file. Returns Dictionary of {dir: inputfile}
     """
     inputdirs = list()

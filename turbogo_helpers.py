@@ -229,6 +229,10 @@ def check_route(route):
                     route_opts['jobtype'] = 'optfreq'
                 elif item.lower() == 'freq' and route_opts['jobtype'] == 'opt':
                     route_opts['jobtype'] = 'optfreq'
+                elif item.lower() == 'ts' and route_opts['jobtype'] == 'freq':
+                    route_opts['jobtype'] = 'ts'
+                elif item.lower() == 'freq' and route_opts['jobtype'] == 'ts':
+                    route_opts['jobtype'] = 'ts'
                 else:
                     logging.warning("Jobtype '{}' and '{}' called".format(
                         item,

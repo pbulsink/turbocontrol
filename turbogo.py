@@ -228,6 +228,8 @@ def jobsetup(infile):
         job.functional = route['functional']
     if 'jobtype' in route:
         job.jobtype = route['jobtype']
+    else:
+        job.jobtype = 'sp'
     if job.jobtype == 'opt' or job.jobtype == 'optfreq':
         #one atom checking - can't opt one atom, so single point it.
         if len(geom) == 1 and job.jobtype:
@@ -235,6 +237,8 @@ def jobsetup(infile):
     if 'freqopts' in route:
         job.freqopts = route['freqopts']
     elif job.jobtype == 'freq' and not 'freqopts' in route:
+        job.freqopts = DEFAULT_FREQ
+    elif job.jobtype == 'ts' and not 'freqopts' in route:
         job.freqopts = DEFAULT_FREQ
     if 'ri' in route:
         job.ri = True
@@ -246,7 +250,6 @@ def jobsetup(infile):
         job.ri = False
     if 'disp' in route or job.functional == 'b97-d':
         job.disp = True
-
     if 'iterations' in args:
         job.iterations = int(args['iterations'])
     elif 'maxcycles' in args:
@@ -356,6 +359,7 @@ export HOSTS_FILE=`readlink -f hosts_file`
         else:
             jobcommand = 'dscf\ngrad\njobex -trans'
         jobcommand += ' > ts.out'
+        jobcommand += '\nt2x > optimization.xyz\nt2x -c > final_geometry.xyz'
 
     logging.debug('Job submit script: {} completed.'.format(
         jobcommand.replace('\n', ' & ')))
