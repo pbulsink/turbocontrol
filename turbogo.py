@@ -416,6 +416,7 @@ def submit_job(job, script=None):
             job.jobid = jobid
             logging.info('Job {} with job id {} submitted'.format(
                 job.name, jobid))
+            write_file('jobid', list("{}: {}".format(job.jobtype, jobid)))
         else:
             job.jobid = None
             logging.warning('Job id unknown.')
@@ -456,7 +457,7 @@ def jobrunner(infile = None, job = None):
         run_define(job)
         logging.debug('define complete.')
         defend = time.time()
-        logging.debug("define ended in {}s".format(defend-defstart))
+        logging.debug("define ended in {0:.2f}s".format(defend-defstart))
     elif job.jobtype == 'aoforce' or job.jobtype == 'numforce':
         if not turbogo_helpers.check_files_exist(['GEO_OPT_CONVERGED',
                                                   'converged']):
@@ -473,7 +474,7 @@ def jobrunner(infile = None, job = None):
         jobid = submit_job(job, script)
     else:
         logging.info('Job not submitted - prep flag in input.')
-    logging.debug("Submitted in {} seconds.".format(time.time() - starttime))
+    logging.debug("Submitted in {0:.2f} seconds.".format(time.time() - starttime))
     return jobid, job.freqopts, job.name, job.jobtype
 
 def main():

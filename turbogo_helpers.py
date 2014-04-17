@@ -559,7 +559,8 @@ def slug(s):
         Catalyst Bidentate Chloride 3   --> catalyst-bidentate-chloride-3
         Catalyst + Gasses               --> catalyst-gasses
     """
-
+    
+    s.replace("'", '')
     slug = unicodedata.normalize('NFKD', unicode(s))
     slug = slug.encode('ascii', 'ignore').lower()
     slug = re.sub(r'[^a-z0-9]+', '-', slug).strip('-')

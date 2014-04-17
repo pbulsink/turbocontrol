@@ -65,7 +65,7 @@ optional arguments:
 
 TurboGo saves a log file (turbogo.log) in the directory in which it is run. A second logfile (define.log) will remain if the setup crashes or is terminated at some points, or if the script is run verbose.
 
-TurboGo writes the final coordinates to finalgeom.xyz. If openbabel is installed, it will also write finalgeom.mol. The entire optimization is written to optimization.xyz for viewing with a molecular viewer, such as vmd.
+TurboGo writes the final coordinates to final_geometry.xyz. If openbabel is installed, it will also write finalgeom.mol. The entire optimization is written to optimization.xyz for viewing with a molecular viewer, such as vmd.
 
 
 ##4.0 TurboControl
@@ -87,7 +87,7 @@ optional arguments:
 
 TurboControl outputs information every 3 hours on the status of the jobs. It writes a logfile (turbogo.log) and may or may not leave other log files in each directory (depending on verbosity level). Ends when the last job finishes or crashes. Requires 1 node or can be run on headnode (minimal resource consumption especially after initial job preparation and submission.)
 
-TurboControl assists with analysis by outputting a stats file as jobs complete. This file contains file details, Optimization and frequency timing details, energy, and the first frequency.
+TurboControl assists with analysis by outputting a stats file as jobs complete. This file contains file details, optimization and frequency timing details, energy, and the first frequency.
 
 
 ## 5.0 Input File Format

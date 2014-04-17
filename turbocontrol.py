@@ -247,7 +247,7 @@ def ensure_not_ts(job):
         if '$vibrational spectrum' in controlfile[i]:
             for j in range (i+3, len(controlfile)):
                 col = controlfile[j][15:34].strip()
-                if col != '0.00':
+                if not (col == '0.00' or col == '-0.00'):
                     try:
                         vib = float(col)
                     except ValueError:
@@ -363,10 +363,10 @@ def write_stats(job):
     """
     Writes a line to the stats file for each job that completes successfully.
     """
-    if not turbogo_helpers.check_files_exist(['turbocontrol-stats.txt']):
+    if not turbogo_helpers.check_files_exist(['stats.txt']):
         #write the header to the file
         try:
-            with open('turbocontrol-stats.txt', 'w') as f:
+            with open('stats.txt', 'w') as f:
                 f.write("{name:^16}{directory:^20}{optsteps:^10}{opttime:^12}" \
                         "{freqtime:^12}{tottime:^12}{firstfreq:^16}{energy:^16}"
                 .format(
@@ -403,7 +403,7 @@ def write_stats(job):
     tottime = turbogo_helpers.time_readable(job.otime + job.ftime)
     firstfreq = job.firstfreq
     try:
-        with open('turbocontrol-stats.txt', 'a') as f:
+        with open('stats.txt', 'a') as f:
             f.write("{name:^16.16}{directory:^20.20}{optsteps:^10.10}" \
                     "{opttime:^12.12}{freqtime:^12.12}{tottime:^12.12}" \
                     "{firstfreq:^16.16}{energy:^16.16}"
@@ -705,7 +705,7 @@ def main():
                 pass
         jobs.append(job)
 
-    logging.info("Set up and submitted {} jobs in {} seconds.".format(
+    logging.info("Set up and submitted {} jobs in {0:.2f} seconds.".format(
         len(jobs),
         str(time() - start)))
 
