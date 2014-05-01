@@ -31,7 +31,7 @@ ELEMENTS = ['Ac', 'Ag', 'Al', 'Am', 'Ar', 'As', 'At', 'Au', 'B', 'Ba', 'Be',
             'Uut', 'V', 'W', 'Xe', 'Y', 'Yb', 'Zn', 'Zr']
 
 ARGLIST = ['nproc', 'nprocessors', 'nprocshared', 'arch', 'architecture',
-           'para_arch', 'maxcycles', 'nocontrolmod', 'autocontrolmod']
+           'para_arch', 'maxcycles', 'nocontrolmod', 'autocontrolmod', 'rt']
 DISCARDARGLIST = ['nosave', 'rwf', 'chk', 'mem']
 ROUTELIST = ['opt', 'freq', 'ts', 'td', 'prep', 'sp']
 FREQOPTS = ['aoforce', 'numforce']
@@ -224,6 +224,16 @@ def check_args(iargs):
                         line,
                         'More than one control modify flag passed.'
                         )
+
+            elif arg[0] == 'rt':
+                if is_positive_int(arg[1]) and 0 <= arg[1] and arg[1] <= 168:
+                    args['rt'] = int(arg[1])
+                else:
+                    args['rt'] = 168
+                    logging.warning("Invalid value of '{}' for {}.".format(
+                        arg[1],
+                        arg[0]
+                        ))
         elif arg[0].lower() not in DISCARDARGLIST:
             logging.warning("Invalid arg: {}.".format(arg[0]))
             raise InputCheckError(line, 'Invalid argument {}.'.format(arg[0]))

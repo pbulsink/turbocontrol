@@ -103,6 +103,7 @@ Keywords are as follows:
 - %maxcycles      - number of optimization iterations before failing.
 - %autocontrolmod - DEFAULT - modify the 'control' file to include optimizations to speed up the job.
 - %nocontrolmod   - do not modify control file as above.
+- %rt             - specify max expected runtime (for any part of job)in hours. Allows backfilling in gridengine queue to speed up job submission. For example, for a 1 hour opt and 4 hour freq, submit at least a rt of 4
 
 Gaussian args, including %nosave, %rwf=[file], %chk=[file], and %mem=[memory] are silently ignored.
 
@@ -161,6 +162,7 @@ An example input file for benzene:
 %nproc=4
 %arch=GA
 %maxcycles=250
+%rt=6
 # opt freq b3-lyp/def2-TZVP ri marij numforce
 
 Benzene Optimization & Frequency

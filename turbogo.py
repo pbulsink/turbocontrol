@@ -79,7 +79,7 @@ class Job():
     def __init__(self, name='', basis='def2-tzvp', functional='tpss',
                  jobtype='opt', spin=1, iterations=300, charge=0, ri=None,
                  marij=None, disp=None, para_arch='GA', nproc='4',
-                 freqopts=None, freeh=None):
+                 freqopts=None, freeh=None, rt=168):
         #data doesn't need to be validated, it is when read from inputfile
         self.name = name
         self.basis = basis
@@ -108,6 +108,7 @@ class Job():
         self.control_remove = list()
         self.geometry = list()
         self.freqopts = freqopts
+        self.rt = "{}:00:00".format(rt)
 
 
 def jobsetup(infile):
@@ -262,6 +263,8 @@ def jobsetup(infile):
         job.iterations = int(args['maxcycles'])
     if 'nproc' in args:
         job.nproc = int(args['nproc'])
+    if 'rt' in args:
+        job.rt = "{}:00:00".format(args['rt'])
     if job.jobtype != 'freq':
         if 'arch' in args:
             job.para_arch = args['arch']
@@ -386,7 +389,7 @@ export HOSTS_FILE=`readlink -f hosts_file`
 #$ -j y
 #$ -o {jobname}.stdout
 #$ -N tm.{jobname}
-#$ -l h_rt=168:00:00
+#$ -l h_rt={rt}
 #$ -R y
 #$ -pe threaded {nproc}
 {env_mod}
@@ -403,7 +406,8 @@ touch startfile
             nproc=job.nproc,
             parallel_preamble=parallel_preamble,
             jobcommand=jobcommand,
-            env_mod=env_mod
+            env_mod=env_mod,
+            rt = job.rt
         )
 
     #listify script by lines and write lines to file
