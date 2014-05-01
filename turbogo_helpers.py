@@ -10,13 +10,21 @@ import os
 import time
 from subprocess import Popen, PIPE
 
+
 """
+-------------------------------------------------------------------------------
 Change these to reflect your system.
 Turbodir is the parent dir for turbomole.
 Turbosys is the system name (should be one listed in turbomole/bin)
+-------------------------------------------------------------------------------
 """
 MAN_TURBODIR = '/share/apps/turbomole/6.5'
 MAN_TURBOSYS = 'em64t-unknown-linux-gnu'
+
+"""
+-------------------------------------------------------------------------------
+"""
+
 
 ELEMENTS = ['Ac', 'Ag', 'Al', 'Am', 'Ar', 'As', 'At', 'Au', 'B', 'Ba', 'Be',
             'Bh', 'Bi', 'Bk', 'Br', 'C', 'Ca', 'Cd', 'Ce', 'Cf', 'Cl', 'Cm',
@@ -682,4 +690,21 @@ def get_calc_time(jobdir, jobfile):
     return (os.path.getmtime(os.path.join(os.curdir, jobdir, jobfile))
             - os.path.getmtime(os.path.join(os.curdir, jobdir, 'startfile')))
 
+
+def get_dielectrics(inputfile):
+    """Converts dielectric info from input file to python dict"""
+    try:
+        with open (inputfile, 'r') as f:
+            data = f.readlines()
+    except Exception as e:
+        raise FileAccessError("Error reading file {}.".format(filename), e)
+    
+    dielectrics = dict()
+    for i in range(1, len(data)):
+        e = data[i].strip().split('\t')
+        if not e == ['']:
+            dielectrics[e[0]] =[e[1],e[2],e[3],e[4],e[5],e[6]]
+    return dielectrics
+    
+DIELECTRICS = get_dielectrics('dielectricsolvents.csv')   
 

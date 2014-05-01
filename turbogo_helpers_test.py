@@ -474,7 +474,7 @@ class TestControlMods(unittest.TestCase):
             '$ricore_slave 1'
             ]
         self.assertEqual(auto_control_mod(list(), self.job), result)
-
+    
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

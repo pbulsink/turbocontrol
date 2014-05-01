@@ -789,9 +789,13 @@ def main():
                         help='Run more verbose (show debugging info)')
     group.add_argument('-q', '--quiet', action="store_true",
                         help='Run less verbose (show only warnings)')
+    parser.add_argument('-s', '--solvent', help='Show solvents known to Turbocontrol')
     args = parser.parse_args()
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(logging.INFO)
+    if args.solvent:
+        print sorted(turbogo_helpers.DIELECTRICS.keys())
+        exit()
     if args.verbose:
         ch.setLevel(logging.DEBUG)
     elif args.quiet:
