@@ -13,8 +13,11 @@ import time
 import os
 
 TURBODIR=os.getenv('TURBODIR')
+TURBOSYS=os.getenv('TURBOMOLE_SYSNAME')
+if not TURBOSYS:
+    TURBOSYS = 'em64t-unknown-linux-gnu'
 if TURBODIR:
-    TURBOSCRIPT = os.path.join(TURBODIR, 'bin', 'em64t-unknown-linux-gnu')
+    TURBOSCRIPT = os.path.join(TURBODIR, 'bin', TURBOSYS)
 else:
     TURBOSCRIPT = ''
 
@@ -90,6 +93,8 @@ class Define():
             self.fparams['marij'] = True
         if job.jobtype == 'ts':
             self.gparams['jobtype'] = 'ts'
+        elif job.jobtype == 'sp':
+            self.gparams['jobtype'] = 'sp'
         else:
             self.gparams['jobtype'] = 'freqopt'
         self.fparams['func'] = job.functional
@@ -125,13 +130,11 @@ class Define():
             else:
                 logging.warning('Unexpected response from define.')
                 raise DefineError('Unexpected response in define: control file')
+            self.define.sendline('')
 
-            #Write title
-            self.define.sendline("")
-            out = self.define.expect(['INPUT TITLE'])
-            if out == 0:
-                self.define.sendline(title)
-                logging.debug('Title written.')
+            self.define.expect(['INPUT TITLE OR'])
+            self.define.sendline(title)
+            logging.debug('Title written.')
 
             #Check for old geometry & erase
             out = self.define.expect(['DO YOU WANT TO CHANGE THE GEOMETRY DATA',
@@ -156,7 +159,7 @@ class Define():
             self.define.sendline('a coord')
             self.define.expect('CARTESIAN COORDINATES FOR ')
             logging.debug('Coordinates imported.')
-            if self.gparams['jobtype'] != 'ts':
+            if self.gparams['jobtype'] != 'ts' or self.gparams['jobtype'] != 'sp':
                 #uff
                 self.define.expect('IF YOU APPEND A QUESTION MARK TO ANY COMMAND')
                 self.define.sendline('ff')

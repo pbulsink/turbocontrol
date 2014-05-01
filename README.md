@@ -19,7 +19,7 @@ Gaussian software is well known for the user friendly GUI it contains (via Gauss
 
 
 ## 2.0 System Requirements
-There are two user-facing scripts available, both written to work with Turbomole 6.1 on clusters using Grid Engine queuing software.
+There are two user-facing scripts available, both written to work with Turbomole 6.1-6.5 on clusters using Grid Engine queuing software.
 The only tests of operation are on a system with the following details:
 
 - Rocks 6.1 (Emerald Boa)/CentOS 6.3
@@ -148,7 +148,7 @@ $paroptions ga_memperproc 900000000000000 900000000000
 $parallel_parameters maxtask=10000
 $ricore_slave 1
 $maxcor 2048
-$les all 1
+
 ```
 
 Additional lines may be added, or lines removed, by placing them after the geometry with a $ (for addition) or -$ (for removal).
@@ -200,7 +200,7 @@ Medium Priority:
 - none
     
 Low Priority:
-- Presentation of badly formatted input files to allow for modification and resubmission to reduce loss by typo
+- Presentation of badly formatted input files to allow for modification and resubmission to reduce loss by typos
 - Expand inclusion of more basis sets, mix basis sets for different atoms.
 
 

@@ -79,7 +79,7 @@ class Job():
     def __init__(self, name='', basis='def2-tzvp', functional='tpss',
                  jobtype='opt', spin=1, iterations=300, charge=0, ri=None,
                  marij=None, disp=None, para_arch='GA', nproc='4',
-                 freqopts=None):
+                 freqopts=None, freeh=None):
         #data doesn't need to be validated, it is when read from inputfile
         self.name = name
         self.basis = basis
@@ -98,6 +98,7 @@ class Job():
             self.disp = True
         else:
             self.disp = disp
+        self.freeh = freeh
         self.nproc = nproc
         if jobtype == 'freq' or jobtype == 'aoforce':
             self.para_arch = 'SMP'
@@ -232,14 +233,17 @@ def jobsetup(infile):
         job.jobtype = 'sp'
     if job.jobtype == 'opt' or job.jobtype == 'optfreq':
         #one atom checking - can't opt one atom, so single point it.
-        if len(geom) == 1 and job.jobtype:
+        if len(geom) == 1:
+            logging.debug('One atom job changed to SP')
             job.jobtype = 'sp'
-    if 'freqopts' in route:
+    if 'freqopts' in route and job.jobtype != 'sp':
         job.freqopts = route['freqopts']
     elif job.jobtype == 'freq' and not 'freqopts' in route:
         job.freqopts = DEFAULT_FREQ
     elif job.jobtype == 'ts' and not 'freqopts' in route:
         job.freqopts = DEFAULT_FREQ
+    if job.freeh:
+        job.freqopts += '+freeh'
     if 'ri' in route:
         job.ri = True
     else:
@@ -250,6 +254,8 @@ def jobsetup(infile):
         job.ri = False
     if 'disp' in route or job.functional == 'b97-d':
         job.disp = True
+    if 'freeh' in route:
+        job.freeh = True
     if 'iterations' in args:
         job.iterations = int(args['iterations'])
     elif 'maxcycles' in args:
@@ -305,17 +311,25 @@ def submit_script_prepare(job, filename='submitscript.sge'):
     if job.para_arch == "MPI":
         nproc = nproc - 1
 
-    #Set up the parallel preamble
-    preamble_template = """
-export PARA_ARCH={para_arch}
-export MPI_IC_ORDER="TCP"
+    env_mod = ''
+    #env = turbogo_helpers.check_env()
+    #if env:
+    #    logging.warn("Env vars not set. Attempting to fix via submit script")
+    #    for key in env:
+    #        env_mod += "export {}={}\n".format(key, env[key]) 
+
+    #Set up the parallel preamble. No parallel arch info if numforce
+    if job.jobtype != 'numforce':
+        preamble_template = """export PARA_ARCH={para_arch}\n""".format(
+            para_arch = job.para_arch)
+    else:
+        preamble_template=''
+
+    preamble_template += """export MPI_IC_ORDER="TCP"
 export PARNODES={nproc}
 cat $PE_HOSTFILE | awk '{{for(i=0;i<$2;i++) print $1}}' > hosts_file
 export HOSTS_FILE=`readlink -f hosts_file`
-        """.format(
-            para_arch = job.para_arch,
-            nproc = nproc
-        )
+""".format(nproc = nproc)
 
     if job.nproc > 1:
         parallel_preamble = preamble_template
@@ -371,21 +385,25 @@ export HOSTS_FILE=`readlink -f hosts_file`
 #$ -V
 #$ -j y
 #$ -o {jobname}.stdout
-#$ -N turbo.{jobname}
+#$ -N tm.{jobname}
 #$ -l h_rt=168:00:00
 #$ -R y
 #$ -pe threaded {nproc}
+{env_mod}
 {parallel_preamble}
 source $TURBODIR/Config_turbo_env
 
 ulimit -s unlimited
+
+touch startfile
 
 {jobcommand}
 """.format(
             jobname=turbogo_helpers.slug(job.name),
             nproc=job.nproc,
             parallel_preamble=parallel_preamble,
-            jobcommand=jobcommand
+            jobcommand=jobcommand,
+            env_mod=env_mod
         )
 
     #listify script by lines and write lines to file
@@ -416,7 +434,7 @@ def submit_job(job, script=None):
             job.jobid = jobid
             logging.info('Job {} with job id {} submitted'.format(
                 job.name, jobid))
-            write_file('jobid', list("{}: {}".format(job.jobtype, jobid)))
+            turbogo_helpers.write_file('jobid', ["{}: {}".format(job.jobtype, jobid)])
         else:
             job.jobid = None
             logging.warning('Job id unknown.')
@@ -452,7 +470,7 @@ def jobrunner(infile = None, job = None):
     logging.debug('Working with {}.'.format(job.name))
     write_coord(job)
     logging.debug('coord written')
-    if job.jobtype == 'opt' or job.jobtype == 'optfreq' or job.jobtype == 'ts':
+    if job.jobtype == 'opt' or job.jobtype == 'optfreq' or job.jobtype == 'ts' or job.jobtype == 'sp':
         defstart = time.time()
         run_define(job)
         logging.debug('define complete.')
@@ -466,8 +484,11 @@ def jobrunner(infile = None, job = None):
                 )
             raise JobLogicError("Convergence required before {} job.".format(
                 job.jobtype))
-    control_edit(job)
-    logging.debug('control file editing complete.')
+    if job.control_remove or job.control_add:
+        control_edit(job)
+        logging.debug('control file editing complete.')
+    else:
+        logging.debug('No control file edits')
     script = submit_script_prepare(job)
     logging.debug('Submit script written.')
     if job.jobtype != 'prep':

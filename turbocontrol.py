@@ -15,6 +15,7 @@ from datetime import timedelta
 import logging
 import argparse
 from screwer_op import Screwer
+from freeh_op import Freeh
 
 try:
     import openbabel
@@ -65,6 +66,7 @@ class Jobset():
         self.curstart = 0
         self.firstfreq = None
         self.ts = False
+        self.freeh = False
 
     def submit(self):
         """
@@ -73,7 +75,10 @@ class Jobset():
         """
         os.chdir(self.indir)
         try:
-            self.jobid, self.freqopt, self.name, self.jobtype = jobrunner(job=self.job)
+            self.jobid, freqopt, self.name, self.jobtype = jobrunner(job=self.job)
+            self.freqopt = freqopt.split('+')[0]
+            if len(freqopt.split('+')) == 2:
+                self.freeh = True
             if self.jobtype == 'opt' or self.jobtype == 'optfreq':
                 self.status = "Opt Submitted"
             elif self.jobtype == 'numforce' or self.jobtype == 'aoforce':
@@ -83,6 +88,8 @@ class Jobset():
                 self.ts = True
                 if not self.freqopt:
                     self.freqopt = 'numforce'
+            elif self.jobtype == 'sp':
+                self.status = 'SP Submitted'
         except Exception as e:
             self.jobid = None
             self.job = None
@@ -101,11 +108,11 @@ def find_inputs():
 
     results = list()
     #find files in dirs:
-    for dir, _, filenames in os.walk(os.curdir):
-        for file in filenames:
-            fileExt = os.path.splitext(file)[-1]
+    for d, _, filenames in os.walk(os.curdir):
+        for f in filenames:
+            fileExt = os.path.splitext(f)[-1]
             if fileExt == '.in':
-                results.append(os.path.join(dir,file))
+                results.append(os.path.join(d,f))
 
     for r in results:
         if os.path.dirname(r) in filetree:
@@ -156,7 +163,7 @@ def check_opt(job):
         os.path.join(job.indir, 'GEO_OPT_CONVERGED')]):
         #Job converged
         logging.info('Job {} completed optimization.'.format(job.name))
-        job.otime = job.otime + (time() - job.curstart)
+        job.otime += turbogo_helpers.get_calc_time(job.indir, 'opt.out')
         if job.freqopt != None:
             newid = freq_submit(job)
             if newid != -99:
@@ -189,8 +196,10 @@ def check_freq(job):
 
     if job.freqopt == 'numforce':
         filetoread = os.path.join(job.indir, 'numforce', 'aoforce.out')
+        endfile = 'numforce.out'
     else:
         filetoread = os.path.join(job.indir, 'aoforce.out')
+        endfile = 'aoforce.out'
 
     try:
         with open(filetoread, 'r') as f:
@@ -203,7 +212,7 @@ def check_freq(job):
 
     else:
         if "   ****  force : all done  ****" in endstatus:
-            job.ftime = job.ftime + (time() - job.curstart)
+            job.ftime += turbogo_helpers.get_calc_time(job.indir, endfile)
             logging.info('Job {} completed frequency.'.format(job.name))
             job.status = "Completed Freq"
             if not job.ts:
@@ -211,6 +220,8 @@ def check_freq(job):
             else:
                 status = ensure_ts(job)
             if status == 'completed':
+                if job.freeh:
+                    do_freeh(job)
                 return 'completed'
             elif status == 'error':
                 return 'ocrashed'
@@ -359,6 +370,22 @@ def ensure_ts(job):
         return 'error'
 
 
+def do_freeh(job):
+    """
+    Does freeh analysis on job if requested
+    """
+    if job.freqopt == 'numforce':
+        newdir = os.path.join(job.indir, 'numforce')
+    else:
+        newdir = job.indir
+    
+    os.chdir(newdir)
+    freeh = Freeh()
+    freeh.run_freeh()
+    job.params, job.data = proc_freeh()
+    write_freeh(job)
+    
+
 def write_stats(job):
     """
     Writes a line to the stats file for each job that completes successfully.
@@ -420,6 +447,100 @@ def write_stats(job):
             f.write('\n')
     except (OSError, IOError) as e:
         logging.warning("Error writing stats file: {}".format(e))
+
+
+def write_freeh(job):
+    """
+    Writes a line to the freeh file for each job that completes successfully
+    with freeh requested.
+    """
+    if not turbogo_helpers.check_files_exist(['freeh.txt']):
+        #write the header to the file
+        try:
+            with open('freeh.txt', 'w') as f:
+                f.write("{name:^16}{directory:^20}{zpe:^14}{t:^8}" \
+                        "{p:^11}{qtrans:^12}{ln(qrot):^10}" \
+                        "{pot:^14}{eng:^14}{ent:^14}{cv:^14}{cp:^14}"
+                .format(
+                    name='Name',
+                    directory = 'Directory',
+                    zpe = 'ZPE (kJ/mol)',
+                    t = 'Temp (K)',
+                    p = 'p (MPa)',
+                    qtrans = 'ln(qtrans)',
+                    qrot = 'ln(qrot)',
+                    qvib = 'ln(qvib)',
+                    pot = 'Pot (kJ/mol)',
+                    eng = 'Eng (kJ/mol)',
+                    ent = 'Ent (kJ/mol/K)',
+                    cv = 'Cv (kJ/molK)',
+                    cp = 'Cp (kJ/molK)'
+                ))
+                f.write('\n')
+        except IOError as e:
+            logging.warning("Error preparing freeh file: {}".format(e))
+        except Exception as e:
+            logging.warning("Unknown error {}".format(e))
+    name = job.name
+    directory = os.path.join(job.indir, job.infile)
+    zpe = job.data['zpe']
+    t = job.data['t']
+    p = job.data['p']
+    qtrans = job.data['qtrans']
+    qrot = job.data['qrot']
+    qvib = job.data['qvib']
+    pot = job.data['pot']
+    eng = job.data['eng']
+    ent = job.data['ent']
+    cv = job.data['cv']
+    cp = job.data['cp']
+    
+    try:
+        with open('freeh.txt', 'w') as f:
+            f.write("{name:^16}{directory:^20}{zpe:^14}{t:^8}" \
+                    "{p:^11}{qtrans:^12}{ln(qrot):^10}" \
+                    "{pot:^14}{eng:^14}{ent:^14}{cv:^14}{cp:^14}"
+            .format(
+                name=name,
+                directory = directory,
+                zpe = zpe,
+                t = t[0],
+                p = p[0],
+                qtrans = qtrans[0],
+                qrot = qrot[0],
+                qvib = qvib[0],
+                pot = pot[0],
+                eng = eng[0],
+                ent = ent[0],
+                cv = cv[0],
+                cp = cp[0]
+            ))
+            f.write('\n')
+            if len(t) > 1: #don't rewrite name/zpe for each line
+                for i in range(1, len(t)):
+                    f.write("{name:^16}{directory:^20}{zpe:^14}{t:^8}" \
+                    "{p:^11}{qtrans:^12}{ln(qrot):^10}" \
+                    "{pot:^14}{eng:^14}{ent:^14}{cv:^14}{cp:^14}"
+                .format(
+                    name='',
+                    directory = '',
+                    zpe = '',
+                    t = t[0],
+                    p = p[0],
+                    qtrans = qtrans[0],
+                    qrot = qrot[0],
+                    qvib = qvib[0],
+                    pot = pot[0],
+                    eng = eng[0],
+                    ent = ent[0],
+                    cv = cv[0],
+                    cp = cp[0]
+                ))
+                f.write('\n')
+            f.write('\n')
+    except (OSError, IOError) as e:
+        logging.warning("Error writing freeh file: {}".format(e))
+
 
 def watch_jobs(jobs):
     """
@@ -704,10 +825,9 @@ def main():
             except (OSError, IOError):
                 pass
         jobs.append(job)
-
-    logging.info("Set up and submitted {} jobs in {0:.2f} seconds.".format(
-        len(jobs),
-        str(time() - start)))
+    end = time() - start
+    logging.info("Set up and submitted {} jobs in {} seconds.".format(
+        len(jobs),end))
 
     if len(jobs) > 0:
         watch_jobs(jobs)

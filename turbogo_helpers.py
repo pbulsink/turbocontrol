@@ -7,8 +7,16 @@ import logging
 import re
 import unicodedata
 import os
+import time
 from subprocess import Popen, PIPE
 
+"""
+Change these to reflect your system.
+Turbodir is the parent dir for turbomole.
+Turbosys is the system name (should be one listed in turbomole/bin)
+"""
+MAN_TURBODIR = '/share/apps/turbomole/6.5'
+MAN_TURBOSYS = 'em64t-unknown-linux-gnu'
 
 ELEMENTS = ['Ac', 'Ag', 'Al', 'Am', 'Ar', 'As', 'At', 'Au', 'B', 'Ba', 'Be',
             'Bh', 'Bi', 'Bk', 'Br', 'C', 'Ca', 'Cd', 'Ce', 'Cf', 'Cl', 'Cm',
@@ -28,7 +36,8 @@ DISCARDARGLIST = ['nosave', 'rwf', 'chk', 'mem']
 ROUTELIST = ['opt', 'freq', 'ts', 'td', 'prep', 'sp']
 FREQOPTS = ['aoforce', 'numforce']
 ROUTEOPTS = ['ri', 'marij', 'disp', 'disp3', 'tight', 'loose']
-DISCARDROUTEOPTS = ['guess=indo', 'newestmfc', 'gfinput', 'pop=full', 'hf']
+DISCARDROUTEOPTS = ['guess=indo', 'newestmfc', 'gfinput', 'pop=full', 'hf',
+                    'geom=connectivity']
 FUNCTIONALS = ['b3lyp', 'b3-lyp', 'blyp', 'b-lyp', 'pbe', 'b97d', 'b97-d',
                'tpss', 'pbe0', 'tpssh', 'bp', 'b-p', 'lhf', 's-vwn', 'svwn',
                'vwn']
@@ -523,9 +532,6 @@ def auto_control_mod(control_add, job):
     elif job.jobtype == 'aoforce' or job.jobtype == 'numforce':
         if not '$rpacor' in args and not '$maxcor' in args:
             control_add.append('$maxcor 2048')
-    if job.jobtype == 'aoforce':
-        if not '$les ' in args:
-            control_add.append('$les all 1')
 
     #numforce works better with ri and marij. Make sure they're included
     #if possible
@@ -631,3 +637,28 @@ def time_readable(timein):
     m, s = divmod(timein, 60)
     h, m = divmod(m, 60)
     return "%d:%02d:%02d" % (h, m, s)
+
+
+def check_env():
+    """Checks the environment to ensure that all of the required turbomole
+    variables are set. Uses defaults at top of script."""
+    sets = dict()
+    turbodir=os.getenv('TURBODIR')
+    if not turbodir:
+        sets['TURBODIR'] = MAN_TURBODIR
+    turbosys=os.getenv('TURBOMOLE_SYSNAME')
+    if not turbosys:
+        sets['TURBOMOLE_SYSNAME'] =  MAN_TURBOSYS
+    if sets:
+        return sets
+    else:
+        return None
+
+
+def get_calc_time(jobdir, jobfile):
+    """Gets the job optimization time by filetime comparisons in the supplied
+    job directory"""
+    return (os.path.getmtime(os.path.join(os.curdir, jobdir, jobfile))
+            - os.path.getmtime(os.path.join(os.curdir, jobdir, 'startfile')))
+
+
