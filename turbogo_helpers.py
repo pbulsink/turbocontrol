@@ -35,7 +35,7 @@ ARGLIST = ['nproc', 'nprocessors', 'nprocshared', 'arch', 'architecture',
 DISCARDARGLIST = ['nosave', 'rwf', 'chk', 'mem']
 ROUTELIST = ['opt', 'freq', 'ts', 'td', 'prep', 'sp']
 FREQOPTS = ['aoforce', 'numforce']
-ROUTEOPTS = ['ri', 'marij', 'disp', 'disp3', 'tight', 'loose']
+ROUTEOPTS = ['ri', 'marij', 'disp', 'disp3', 'tight', 'loose', 'freeh']
 DISCARDROUTEOPTS = ['guess=indo', 'newestmfc', 'gfinput', 'pop=full', 'hf',
                     'geom=connectivity']
 FUNCTIONALS = ['b3lyp', 'b3-lyp', 'blyp', 'b-lyp', 'pbe', 'b97d', 'b97-d',
@@ -101,6 +101,17 @@ def is_positive_int(num):
     """Test the input to be a positive integer"""
     if is_int(num):
         if int(num) >= 0:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
+def is_positive_float(num):
+    """Test the input to be a positive float"""
+    if is_float(num):
+        if float(num) >= 0:
             return True
         else:
             return False

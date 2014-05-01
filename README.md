@@ -87,7 +87,7 @@ optional arguments:
 
 TurboControl outputs information every 3 hours on the status of the jobs. It writes a logfile (turbogo.log) and may or may not leave other log files in each directory (depending on verbosity level). Ends when the last job finishes or crashes. Requires 1 node or can be run on headnode (minimal resource consumption especially after initial job preparation and submission.)
 
-TurboControl assists with analysis by outputting a stats file as jobs complete. This file contains file details, optimization and frequency timing details, energy, and the first frequency.
+TurboControl assists with analysis by outputting a stats file as jobs complete. This file contains file details, optimization and frequency timing details, energy, and the first frequency. Additional information can be requested by including the 'freeh' keyword (see below). 
 
 
 ## 5.0 Input File Format
@@ -128,6 +128,7 @@ Job options available:
 - disp      - Use Turbomole's implementation of Grimme's dispersion
 - aoforce   - Use aoforce for frequency jobs
 - numforce  - Use numforce for frequency jobs
+- freeh     - Use Turbomole's 'freeh' thermodynamics data script to extract energy infos after frequency analysis
 
 ### 5.3 Title
 Following the Route cards, a blank line is added, then a line containing the title of the calculation. This can include any characters, spaces, etc., remaining on only one line. This is followed by a blank line.
