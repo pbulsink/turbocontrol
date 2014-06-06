@@ -130,6 +130,12 @@ class TestSimpleFuncs(unittest.TestCase):
         """Test the time_readable function with a harder time"""
         self.assertEqual(time_readable(5000), '1:23:20')
 
+    def test_check_env(self):
+        """Test checking the local env. May fail depending on where this is run"""
+        self.assertEqual(check_env(), {'TURBODIR':'/share/apps/turbomole/6.5',
+                                       'TURBOMOLE_SYSNAME': 'em64t-unknown-linux-gnu'})
+    
+
 
 class TestArgs(unittest.TestCase):
     """Test the args testers"""
@@ -143,6 +149,13 @@ class TestArgs(unittest.TestCase):
         self.bad_nprocarg = ['%nproc=10']
         self.bad_archarg = ['%arch=GAP']
         self.bad_maxcyclesarg = ['%maxcycles=-5']
+        self.good_cosmo = ['%cosmo=DMF']
+        self.good_lower_cosmo = ['%cosmo=dmf']
+        self.bad_cosmo = ['%cosmo=blarg']
+        self.none_cosmo = ['%cosmo']
+        self.number_cosmo = ['%cosmo=38.4']
+        self.bad_rt = ['%rt=numbers']
+        self.good_rt = ['%rt=10']
         self.bad_controlmodarg = ['%autocontrolmod', '%nocontrolmod']
         self.unknownarg = ['%billy']
         self.ignorearg = ['%rwf=billy.rwf']
@@ -211,6 +224,35 @@ class TestArgs(unittest.TestCase):
         result = {'nproc': '8', 'arch': 'GA', 'iterations':'300'}
         self.assertEqual(check_args(self.multiarg), result)
 
+    def test_good_upper_cosmo(self):
+        """Test a good cosmo"""
+        self.assertEqual(check_args(self.good_cosmo), {'cosmo': '38'})
+
+    def test_good_lower_cosmo(self):
+        """Test a good cosmo with lowercase letters"""
+        self.assertEqual(check_args(self.good_lower_cosmo), {'cosmo': '38'})
+    
+    def test_bad_cosmo(self):
+        """Test a bad cosmo"""
+        self.assertEqual(check_args(self.bad_cosmo), {})
+    
+    def test_no_cosmo(self):
+        """Test a blank cosmo"""
+        self.assertEqual(check_args(self.none_cosmo), {'cosmo': True})
+
+    def test_number_cosmo(self):
+        """Test an explicit number"""
+        self.assertEqual(check_args(self.number_cosmo), {'cosmo': '38.4'})
+
+    def test_rt(self):
+        """Test an rt"""
+        self.assertEqual(check_args(self.good_rt), {'rt': 10})
+
+    def test_bad_rt(self):
+        """Test a bad rt"""
+        self.assertEqual(check_args(self.bad_rt), {'rt': 168})
+    
+    
 
 class TestRoute(unittest.TestCase):
     """Test the route testers"""

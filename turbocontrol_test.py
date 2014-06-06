@@ -28,10 +28,10 @@ class TestJobset(unittest.TestCase):
 class TestJobChecker(unittest.TestCase):
     """Test the job checking codes"""
     def setUp(self):
-        job1 = Job()
-        job2 = Job()
-        job3 = Job()
-        job4 = Job()
+        job1 = Job(indir='testdir1', infile='testfile')
+        job2 = Job(indir='testdir2', infile='testfile')
+        job3 = Job(indir='testdir3', infile='testfile', jobtype = 'opt')
+        job4 = Job(indir='testdir4', infile='testfile')
         energy = [
 '$energy      SCF               SCFKIN            SCFPOT',
 '     1 -1508.413363988      1452.770765492     -2961.184129480',
@@ -97,7 +97,36 @@ class TestJobChecker(unittest.TestCase):
 '   -6.90739202353972     -0.98927153603955      2.99702881843471      c',
 '   -4.41515544700658     -0.47931078232507      2.18251729096911      c',
 '$end',
-        ]
+]
+        controldoubleTS = [
+'$les all 2',
+'$maxcor 2056',
+'$orbital_max_rnorm 0.85671291481470E-03',
+'$vibrational normal modes',
+'  1 1   0.0007426992  -0.0104454972  -0.0430670281   0.0336987972  -0.0954097121',
+'  1 2   0.0896161635   0.0053406304  -0.0059127288   0.0005980447   0.0219508437',
+'$nvibro      10',
+'$vibrational spectrum',
+'#  mode     symmetry     wave number   IR intensity    selection rules',
+'#                         cm**(-1)        km/mol         IR     RAMAN',
+'     1                        0.00         0.00000        -       -',
+'     2                        0.00         0.00000        -       -',
+'     3                        0.00         0.00000        -       -',
+'     4                        0.00         0.00000        -       -',
+'     5                        0.00         0.00000        -       -',
+'     6                        0.00         0.00000        -       -',
+'     7        a             -37.01         1.17046       YES     YES',
+'     8        a             -52.13         1.16835       YES     YES',
+'     9        a              54.70         2.04078       YES     YES',
+'    10        a              59.99         1.55955       YES     YES',
+'$newcoord',
+'# cartesian coordinates shifted along normal mode   7 by 5.02923',
+'   -8.35953193391576     -0.99142962091868     -1.33326242865311      c',
+'   -8.91203963850279     -1.25735534578141      1.24280597454727      c',
+'   -6.90739202353972     -0.98927153603955      2.99702881843471      c',
+'   -4.41515544700658     -0.47931078232507      2.18251729096911      c',
+'$end',
+]
         aoforce = [
 '    ------------------------------------------------------------------------',
 '         total  cpu-time :   0.48 seconds',
@@ -111,14 +140,18 @@ class TestJobChecker(unittest.TestCase):
 '    2014-01-09 17:12:15.850',
 '',
         ]
-        self.jobset1 = Jobset('testdir1', 'testfile', job1, freqopt = 'aoforce')
-        self.jobset1.curstart = time()
-        self.jobset2 = Jobset('testdir2', 'testfile', job2, freqopt = 'aoforce')
-        self.jobset2.curstart = time()
+        self.jobset1 = Jobset('testdir1', 'testfile', job1)
+        self.jobset1.job.curstart = time()
+        self.jobset1.job.freqopt='aoforce'
+        self.jobset2 = Jobset('testdir2', 'testfile', job2)
+        self.jobset2.job.curstart = time()
+        self.jobset2.job.freqopt=None
         self.jobset3 = Jobset('testdir3', 'testfile', job3, freqopt = None)
-        self.jobset3.curstart = time()
-        self.jobset4 = Jobset('testdir4', 'testfile', job4, freqopt = 'aoforce')
-        self.jobset4.curstart = time()
+        self.jobset3.job.curstart = time()
+        self.jobset3.job.freqopt=None
+        self.jobset4 = Jobset('testdir4', 'testfile', job4)
+        self.jobset4.job.curstart = time()
+        self.jobset4.job.freqopt='aoforce'
         try:
             os.mkdir('testdir1')
             os.mkdir('testdir2')
@@ -138,7 +171,7 @@ class TestJobChecker(unittest.TestCase):
             os.path.join('testdir2', 'aoforce.out'),
             ['', '', '', '', '', '', ''])
         turbogo_helpers.write_file(os.path.join(
-            'testdir2', 'control'), ['', '', ''])
+            'testdir2', 'control'), controldoubleTS)
         turbogo_helpers.write_file(os.path.join(
             'testdir3', 'GEO_OPT_CONVERGED'), [''])
         turbogo_helpers.write_file(os.path.join('testdir3', 'energy'), energy)
@@ -173,11 +206,11 @@ class TestJobChecker(unittest.TestCase):
 
     def test_check_opt_crashed(self):
         """Check for a crashed optimization"""
-        self.assertEqual(check_opt(self.jobset2), 'ocrashed')
+        self.assertEqual(check_opt(self.jobset2.job), 'ocrashed')
 
     def test_check_opt_complete(self):
         """Check for a completed optimization, no freq"""
-        self.assertEqual(check_opt(self.jobset3), 'completed')
+        self.assertEqual(check_opt(self.jobset3.job), 'completed')
 
     def test_check_freq_crashed(self):
         """Test for a crashed frquency"""
@@ -203,6 +236,18 @@ class TestJobChecker(unittest.TestCase):
         """Will crash at qsub submit command"""
         self.assertEqual(ensure_not_ts(self.jobset3), 'error')
 
+    def test_ensure_ts_ts(self):
+        """Test to ensure job is a ts"""
+        self.assertEqual(ensure_ts(self.jobset2), 'imaginary')
+
+    def test_ensure_ts_not_ts(self):
+        """Woops solved a stable state"""
+        self.assertEqual(ensure_ts(self.jobset1), 'opt')
+
+    def test_ensure_ts_double(self):
+        """Got an imaginary. Thsi shouldn't happen"""
+        self.assertEqual(ensure_ts(self.jobset3), 'ts')
+    
 
 class TestWriteStats(unittest.TestCase):
     """Test the writing of stats"""
@@ -247,8 +292,8 @@ class TestWriteStats(unittest.TestCase):
         answer = ['Name           Directory      Opt Steps   Opt Time   Freq Time   Total Time  1st Frequency       Energy',
                   'testjob2     testdir2/testfile      ?       0:10:00     1:01:01     1:11:01        50.00             ?']
         write_stats(self.jobset2)
-        stats = turbogo_helpers.read_clean_file('turbocontrol-stats.txt')
-        os.remove('turbocontrol-stats.txt')
+        stats = turbogo_helpers.read_clean_file('stats.txt')
+        os.remove('stats.txt')
         self.assertEqual(stats, answer)
 
     def test_write_stats_ok(self):
@@ -256,9 +301,86 @@ class TestWriteStats(unittest.TestCase):
         answer = ['Name           Directory      Opt Steps   Opt Time   Freq Time   Total Time  1st Frequency       Energy',
                   'testjob1     testdir1/testfile      4       0:10:00     1:01:01     1:11:01        50.00      -1508.473774955']
         write_stats(self.jobset1)
-        stats = turbogo_helpers.read_clean_file('turbocontrol-stats.txt')
-        os.remove('turbocontrol-stats.txt')
+        stats = turbogo_helpers.read_clean_file('stats.txt')
+        os.remove('stats.txt')
         self.assertEqual(stats, answer)
+
+class TestWriteFreeh(unittest.TestCase):
+    """Test the writing of freeh"""
+    def setUp(self):
+        data1 = {'zpe': '481.3', 't': ['298.15'], 'p': ['0.1000000'],
+                 'qtrans': ['19.81'], 'qrot': ['15.66'], 'qvib': ['15.89'],
+                 'pot': ['353.99'], 'eng': ['530.06'], 'entr': ['0.59886'],
+                 'cv': ['0.2849985'], 'cp': ['0.2933128'], 'enth': ['532.54']}
+        data2 = {'zpe': '481.3', 't': ['298.15', '308.15', '318.15'],
+                 'p': ['0.1000000', '0.1000000', '0.1000000'],
+                 'qtrans': ['19.81', '20.81', '21.81'],
+                 'qrot': ['15.66', '16.66', '17.66'],
+                 'qvib': ['15.89', '16.89', '17.89'],
+                 'pot': ['353.99', '363.99', '373.99'],
+                 'eng': ['530.06', '540.06', '550.06'],
+                 'entr': ['0.59886', '0.60886', '0.61886'],
+                 'cv': ['0.2849985', '0.2949985', '0.3049985'],
+                 'cp': ['0.2933128', '0.3033128', '0.3133128'],
+                 'enth': ['532.54', '542.54', '552.54']}
+        self.job1 = Job(data=data1, name='testjob1', indir='testdir1', infile = 'infile1')
+        self.job2 = Job(data=data2, name='testjob2', indir='testdir2', infile = 'infile2')
+        self.headerstring = ("{name:^16}{directory:^20}{zpe:^14}{t:^10}" \
+                        "{p:^11}{qtrans:^12}{qrot:^10}" \
+                        "{pot:^14}{eng:^14}{entr:^20}{cv:^14}{cp:^14}{enth:^14}"
+                        .format(
+                            name='Name',
+                            directory = 'Directory',
+                            zpe = 'ZPE (kJ/mol)',
+                            t = 'Temp (K)',
+                            p = 'p (MPa)',
+                            qtrans = 'ln(qtrans)',
+                            qrot = 'ln(qrot)',
+                            qvib = 'ln(qvib)',
+                            pot = 'Pot (kJ/mol)',
+                            eng = 'Eng (kJ/mol)',
+                            entr = 'Entropy (kJ/mol/K)',
+                            cv = 'Cv (kJ/molK)',
+                            cp = 'Cp (kJ/molK)',
+                            enth = 'Enthalpy (kJ/mol)'
+                        ))
+
+    def tearDown(self):
+        try:
+            os.remove('freeh.text')
+            os.remove('freeh')
+        except OSError:
+            pass
+    
+    def test_write_freeh(self):
+        """Test for writing stats with energy file missing"""
+        answer = ['Name           Directory       ZPE (kJ/mol)  Temp (K)   p (MPa)   ln(qtrans)  ln(qrot)  Pot (kJ/mol)  Eng (kJ/mol)  Entropy (kJ/mol/K)  Cv (kJ/molK)  Cp (kJ/molK) Enthalpy (kJ/mol)',
+                  'testjob1      testdir1/infile1      481.3       298.15   0.1000000    19.81      15.66       353.99        530.06          0.59886         0.2849985     0.2933128       532.54']
+        write_freeh(self.job1)
+        freeh = turbogo_helpers.read_clean_file('freeh.txt')
+        os.remove('freeh.txt')
+        self.assertEqual(freeh, answer)
+    
+    def test_write_multi_freeh(self):
+        """Test for ok stats"""
+        answer = ['Name           Directory       ZPE (kJ/mol)  Temp (K)   p (MPa)   ln(qtrans)  ln(qrot)  Pot (kJ/mol)  Eng (kJ/mol)  Entropy (kJ/mol/K)  Cv (kJ/molK)  Cp (kJ/molK) Enthalpy (kJ/mol)',
+                  'testjob2      testdir2/infile2      481.3       298.15   0.1000000    19.81      15.66       353.99        530.06          0.59886         0.2849985     0.2933128       532.54',
+                  '308.15  0.1000000    20.81      16.66       363.99        540.06          0.60886         0.2949985     0.3033128       542.54',
+                  '318.15  0.1000000    21.81      17.66       373.99        550.06          0.61886         0.3049985     0.3133128       552.54']
+        write_freeh(self.job2)
+        freeh = turbogo_helpers.read_clean_file('freeh.txt')
+        os.remove('freeh.txt')
+        self.assertEqual(freeh, answer)
+    
+    def test_write_freeh_preexisting(self):
+        answer = ['Name           Directory       ZPE (kJ/mol)  Temp (K)   p (MPa)   ln(qtrans)  ln(qrot)  Pot (kJ/mol)  Eng (kJ/mol)  Entropy (kJ/mol/K)  Cv (kJ/molK)  Cp (kJ/molK) Enthalpy (kJ/mol)',
+                  'testjob1      testdir1/infile1      481.3       298.15   0.1000000    19.81      15.66       353.99        530.06          0.59886         0.2849985     0.2933128       532.54']
+        turbogo_helpers.write_file('freeh.txt', self.headerstring.split('\n'))
+        write_freeh(self.job1)
+        freeh = turbogo_helpers.read_clean_file('freeh.txt')
+        os.remove('freeh.txt')
+        self.assertEqual(freeh, answer)
+    
 
 
 class TestFindInputs(unittest.TestCase):

@@ -159,17 +159,24 @@ class TestSubmitScriptPrep(unittest.TestCase):
     """Test the submit script generation"""
 
     def setUp(self):
-        self.job = Job()
-        self.job.ri = True
-        self.job.iterations = 300
-        self.job.jobtype = 'opt'
-        self.job.para_arch = 'MPI'
-        self.job.nproc = 8
-        self.job.name = "Test Job 1"
-        submit_script_prepare(self.job, 'testsubmitscript')
+        self.job1 = Job(ri=True, iterations=300, jobtype='opt', para_arch='MPI',
+                        nproc=8, name='Test Job 1')
+        submit_script_prepare(self.job1, 'testsubmitscript1')
+        self.job2 = Job(ri=True, iterations=300, jobtype='numforce', para_arch='MPI',
+                        name='Test Job 2')
+        submit_script_prepare(self.job2, 'testsubmitscript2')
+        self.job3 = Job(ri=True, iterations=300, jobtype='sp', para_arch='SMP',
+                        nproc = 8, name='Test Job 3')
+        submit_script_prepare(self.job3, 'testsubmitscript3')
+        self.job4 = Job(iterations=300, jobtype='ts', para_arch='GA',
+                        nproc=8, name='Test Job 4')
+        submit_script_prepare(self.job4, 'testsubmitscript4')
 
     def tearDown(self):
-        os.remove('testsubmitscript')
+        os.remove('testsubmitscript1')
+        os.remove('testsubmitscript2')
+        os.remove('testsubmitscript3')
+        os.remove('testsubmitscript4')
 
     def test_submit_opt(self):
         """Test generation of the submit script"""
@@ -179,7 +186,7 @@ class TestSubmitScriptPrep(unittest.TestCase):
             '#$ -V',
             '#$ -j y',
             '#$ -o test-job-1.stdout',
-            '#$ -N turbo.test-job-1',
+            '#$ -N tm.test-job-1',
             '#$ -l h_rt=168:00:00',
             '#$ -R y',
             '#$ -pe threaded 8',
@@ -194,11 +201,102 @@ class TestSubmitScriptPrep(unittest.TestCase):
             '',
             'ulimit -s unlimited',
             '',
+            'touch startfile',
+            '',
             'jobex -c 300 -ri > opt.out',
             't2x > optimization.xyz',
             't2x -c > final_geometry.xyz',
             '']
-        submitscript = turbogo_helpers.read_clean_file('testsubmitscript')
+        submitscript = turbogo_helpers.read_clean_file('testsubmitscript1')
+        self.assertEqual(submitscript, result)
+
+    def test_submit_numforce(self):
+        """Test generation of the submit script"""
+        result = [
+            '#!/bin/bash',
+            '#$ -cwd',
+            '#$ -V',
+            '#$ -j y',
+            '#$ -o test-job-2.stdout',
+            '#$ -N tm.test-job-2',
+            '#$ -l h_rt=168:00:00',
+            '#$ -R y',
+            '#$ -pe threaded 1',
+            '',
+            '',
+            'source $TURBODIR/Config_turbo_env',
+            '',
+            'ulimit -s unlimited',
+            '',
+            'touch startfile',
+            '',
+            'NumForce -central -ri > numforce.out',
+            '']
+        submitscript = turbogo_helpers.read_clean_file('testsubmitscript2')
+        self.assertEqual(submitscript, result)
+
+    def test_submit_ts(self):
+        """Test generation of the submit script"""
+        result = [
+            '#!/bin/bash',
+            '#$ -cwd',
+            '#$ -V',
+            '#$ -j y',
+            '#$ -o test-job-4.stdout',
+            '#$ -N tm.test-job-4',
+            '#$ -l h_rt=168:00:00',
+            '#$ -R y',
+            '#$ -pe threaded 8',
+            '',
+            'export PARA_ARCH=GA',
+            'export MPI_IC_ORDER="TCP"',
+            'export PARNODES=8',
+            "cat $PE_HOSTFILE | awk '{for(i=0;i<$2;i++) print $1}' > hosts_file",
+            'export HOSTS_FILE=`readlink -f hosts_file`',
+            '',
+            'source $TURBODIR/Config_turbo_env',
+            '',
+            'ulimit -s unlimited',
+            '',
+            'touch startfile',
+            '',
+            'dscf',
+            'grad',
+            'jobex -trans > ts.out',
+            't2x > optimization.xyz',
+            't2x -c > final_geometry.xyz',
+            '']
+        submitscript = turbogo_helpers.read_clean_file('testsubmitscript4')
+        self.assertEqual(submitscript, result)
+
+    def test_submit_sp(self):
+        """Test generation of the submit script"""
+        result = [
+            '#!/bin/bash',
+            '#$ -cwd',
+            '#$ -V',
+            '#$ -j y',
+            '#$ -o test-job-3.stdout',
+            '#$ -N tm.test-job-3',
+            '#$ -l h_rt=168:00:00',
+            '#$ -R y',
+            '#$ -pe threaded 8',
+            '',
+            'export PARA_ARCH=SMP',
+            'export MPI_IC_ORDER="TCP"',
+            'export PARNODES=8',
+            "cat $PE_HOSTFILE | awk '{for(i=0;i<$2;i++) print $1}' > hosts_file",
+            'export HOSTS_FILE=`readlink -f hosts_file`',
+            '',
+            'source $TURBODIR/Config_turbo_env',
+            '',
+            'ulimit -s unlimited',
+            '',
+            'touch startfile',
+            '',
+            'ridft > sp.out',
+            '']
+        submitscript = turbogo_helpers.read_clean_file('testsubmitscript3')
         self.assertEqual(submitscript, result)
 
 

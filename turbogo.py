@@ -14,6 +14,7 @@ import sys
 from subprocess import Popen, PIPE
 
 import def_op
+import cosmo_op
 import turbogo_helpers
 import os
 
@@ -78,8 +79,9 @@ class Job():
 
     def __init__(self, name='', basis='def2-tzvp', functional='tpss',
                  jobtype='opt', spin=1, iterations=300, charge=0, ri=None,
-                 marij=None, disp=None, para_arch='GA', nproc='4',
-                 freqopts=None, freeh=None, rt=168):
+                 marij=None, disp=None, para_arch='GA', nproc=1,
+                 freqopts=None, freeh=None, rt=168, cosmo=None, data=None,
+                 params=None, indir=None, infile=None):
         #data doesn't need to be validated, it is when read from inputfile
         self.name = name
         self.basis = basis
@@ -109,7 +111,13 @@ class Job():
         self.geometry = list()
         self.freqopts = freqopts
         self.rt = "{}:00:00".format(rt)
-
+        self.cosmo = cosmo
+        self.data = data
+        self.params = params
+        self.indir = indir
+        self.infile = infile
+        self.otime = 0
+        self.ftime = 0
 
 def jobsetup(infile):
     """
@@ -243,8 +251,6 @@ def jobsetup(infile):
         job.freqopts = DEFAULT_FREQ
     elif job.jobtype == 'ts' and not 'freqopts' in route:
         job.freqopts = DEFAULT_FREQ
-    if job.freeh:
-        job.freqopts += '+freeh'
     if 'ri' in route:
         job.ri = True
     else:
@@ -257,12 +263,16 @@ def jobsetup(infile):
         job.disp = True
     if 'freeh' in route:
         job.freeh = True
+    if job.freeh:
+        job.freqopts += '+freeh'
     if 'iterations' in args:
         job.iterations = int(args['iterations'])
     elif 'maxcycles' in args:
         job.iterations = int(args['maxcycles'])
     if 'nproc' in args:
         job.nproc = int(args['nproc'])
+    if 'cosmo' in args:
+        job.cosmo = args['cosmo']
     if 'rt' in args:
         job.rt = "{}:00:00".format(args['rt'])
     if job.jobtype != 'freq':
@@ -293,8 +303,14 @@ def run_define(job):
     define = def_op.Define()
     define.setup_define(job)
     define.start_define()
-    logging.debug("Define Started")
     exitcode = define.run_define()
+    
+def run_cosmo(job):
+    """Set up and run CosmoPrep"""
+    cosmo = cosmo_op.Cosmo()
+    cosmo.setup_cosmo(job)
+    cosmo.start_cosmo()
+    exitcode = cosmo.run_cosmo()
 
 
 def control_edit(job, filename='control'):
@@ -336,10 +352,8 @@ export HOSTS_FILE=`readlink -f hosts_file`
 
     if job.nproc > 1:
         parallel_preamble = preamble_template
-        logging.debug('Parallel via preamble.')
     else:
         parallel_preamble = ''
-        logging.debug("Parallel is ''.")
 
     #set up the job command call itself
     if job.jobtype == 'opt' or job.jobtype == 'optfreq':
@@ -375,6 +389,8 @@ export HOSTS_FILE=`readlink -f hosts_file`
             jobcommand = 'ridft\nrdgrad\njobex -trans -ri'
         else:
             jobcommand = 'dscf\ngrad\njobex -trans'
+        if job.iterations:
+            jobcommant += ' -c {}'.format(job.iterations)
         jobcommand += ' > ts.out'
         jobcommand += '\nt2x > optimization.xyz\nt2x -c > final_geometry.xyz'
 
@@ -480,6 +496,11 @@ def jobrunner(infile = None, job = None):
         logging.debug('define complete.')
         defend = time.time()
         logging.debug("define ended in {0:.2f}s".format(defend-defstart))
+    if job.cosmo != None:
+        try:
+            run_cosmo(job)
+        except Exception as e:
+            logging.warn("Some error in cosmo running: {}".format(e))
     elif job.jobtype == 'aoforce' or job.jobtype == 'numforce':
         if not turbogo_helpers.check_files_exist(['GEO_OPT_CONVERGED',
                                                   'converged']):

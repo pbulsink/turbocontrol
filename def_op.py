@@ -60,7 +60,7 @@ class Define():
                 self.define = pexpect.spawn(os.path.join(TURBOSCRIPT, 'define'))
             except Exception as e:
                 raise DefineError(
-                    "Error starting Define {}. Check the environment is set up".format(
+                    "Error starting Define {} Check the environment is set up".format(
                     str(e)))
             else:
                 logging.debug("Environment not loaded. Define loaded manually.")
@@ -68,7 +68,7 @@ class Define():
             logging.debug("Define instance spawned and active.")
 
         self.define.timeout = self.timeout
-        fout = file('mylog.txt','w')
+        fout = file('deflog.txt','w')
         self.define.logfile = fout
 
     def make_parameters (self, job):

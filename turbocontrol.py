@@ -15,7 +15,7 @@ from datetime import timedelta
 import logging
 import argparse
 from screwer_op import Screwer
-from freeh_op import Freeh
+from freeh_op import Freeh, proc_freeh
 
 try:
     import openbabel
@@ -76,18 +76,19 @@ class Jobset():
         os.chdir(self.indir)
         try:
             self.jobid, freqopt, self.name, self.jobtype = jobrunner(job=self.job)
-            self.freqopt = freqopt.split('+')[0]
-            if len(freqopt.split('+')) == 2:
-                self.freeh = True
-            if self.jobtype == 'opt' or self.jobtype == 'optfreq':
-                self.status = "Opt Submitted"
-            elif self.jobtype == 'numforce' or self.jobtype == 'aoforce':
-                self.status = "Freq Submitted"
-            elif self.jobtype == 'ts':
-                self.status = 'TS Submitted'
-                self.ts = True
-                if not self.freqopt:
-                    self.freqopt = 'numforce'
+            if self.jobtype != 'sp':
+                self.freqopt = freqopt.split('+')[0]
+                if len(freqopt.split('+')) == 2:
+                    self.freeh = True
+                if self.jobtype == 'opt' or self.jobtype == 'optfreq':
+                    self.status = "Opt Submitted"
+                elif self.jobtype == 'numforce' or self.jobtype == 'aoforce':
+                    self.status = "Freq Submitted"
+                elif self.jobtype == 'ts':
+                    self.status = 'TS Submitted'
+                    self.ts = True
+                    if not self.freqopt:
+                        self.freqopt = 'numforce'
             elif self.jobtype == 'sp':
                 self.status = 'SP Submitted'
         except Exception as e:
@@ -111,7 +112,8 @@ def find_inputs():
     for d, _, filenames in os.walk(os.curdir):
         for f in filenames:
             fileExt = os.path.splitext(f)[-1]
-            if fileExt == '.in':
+            if (fileExt == '.in' or fileExt == '.gjf' or fileExt == '.com'
+                or fileExt == '.inp' or fileExt == '.input'):
                 results.append(os.path.join(d,f))
 
     for r in results:
@@ -163,7 +165,19 @@ def check_opt(job):
         os.path.join(job.indir, 'GEO_OPT_CONVERGED')]):
         #Job converged
         logging.info('Job {} completed optimization.'.format(job.name))
-        job.otime += turbogo_helpers.get_calc_time(job.indir, 'opt.out')
+        if job.jobtype == 'opt' or job.jobtype == 'optfreq':
+            opttime = turbogo_helpers.get_calc_time(job.indir, 'opt.out')
+        elif job.jobtype == 'ts':
+            opttime = turbogo_helpers.get_calc_time(job.indir, 'ts.out')
+        elif job.jobtype == 'sp':
+            opttime = turbogo_helpers.get_calc_time(job.indir, 'sp.out')
+        else:
+            opttime = False
+        if opttime:
+            job.otime += opttime
+        else:
+            job.otime += (time() - job.curstart)
+
         if job.freqopt != None:
             newid = freq_submit(job)
             if newid != -99:
@@ -212,7 +226,13 @@ def check_freq(job):
 
     else:
         if "   ****  force : all done  ****" in endstatus:
-            job.ftime += turbogo_helpers.get_calc_time(job.indir, endfile)
+
+            freqtime = turbogo_helpers.get_calc_time(job.indir, endfile)
+            if freqtime:
+                job.ftime += freqtime
+            else:
+                job.ftime += (time() - job.curstart)
+
             logging.info('Job {} completed frequency.'.format(job.name))
             job.status = "Completed Freq"
             if not job.ts:
@@ -221,6 +241,7 @@ def check_freq(job):
                 status = ensure_ts(job)
             if status == 'completed':
                 if job.freeh:
+                    logging.debug('Do Freeh')
                     do_freeh(job)
                 return 'completed'
             elif status == 'error':
@@ -252,7 +273,7 @@ def ensure_not_ts(job):
 
     controlfile = turbogo_helpers.read_clean_file(filetoread)
 
-    vib = False
+    vib1 = False
 
     for i in range(len(controlfile)):
         if '$vibrational spectrum' in controlfile[i]:
@@ -260,21 +281,21 @@ def ensure_not_ts(job):
                 col = controlfile[j][15:34].strip()
                 if not (col == '0.00' or col == '-0.00'):
                     try:
-                        vib = float(col)
+                        vib1 = float(col)
                     except ValueError:
                         pass
                     else:
                         mode = controlfile[j][:6].strip()
                         break
-        if vib:
+        if vib1:
             break
 
-    if vib:
-        if job.firstfreq == vib:
+    if vib1:
+        if job.firstfreq == vib1:
             #Found the same TS as before. End job.
             return 'same'
-        job.firstfreq = vib
-        if vib < 0:
+        job.firstfreq = vib1
+        if vib1 < 0:
             os.chdir(newdir)
             screwer = Screwer(mode)
             try:
@@ -298,7 +319,7 @@ def ensure_not_ts(job):
                     readin = True
             if job.freqopt == 'numforce':
                 os.chdir(os.pardir)
-                shutil.rmtree(os.join(os.curdir, 'numforce'))
+                shutil.rmtree(os.path.join(os.curdir, 'numforce'))
             turbogo_helpers.write_file('coord', newcoord)
             try:
                 job.job.jobtype = 'optfreq'
@@ -335,7 +356,7 @@ def ensure_ts(job):
 
     controlfile = turbogo_helpers.read_clean_file(filetoread)
 
-    vib = False
+    vib1= False
     vib2 = False
 
     for i in range(len(controlfile)):
@@ -344,8 +365,8 @@ def ensure_ts(job):
                 col = controlfile[j][15:34].strip()
                 if col != '0.00':
                     try:
-                        if not vib:
-                            vib = float(col)
+                        if not vib1:
+                            vib1 = float(col)
                         elif not vib2:
                             vib2 = float(col)
                     except ValueError:
@@ -355,8 +376,8 @@ def ensure_ts(job):
         if vib2:
             break
 
-    if vib and vib2:
-        if vib < 0 and vib2 > 0:
+    if vib1 and vib2:
+        if vib1 < 0 and vib2 > 0:
             return 'ts'
         elif vib1 > 0:
             return 'opt'
@@ -374,16 +395,28 @@ def do_freeh(job):
     """
     Does freeh analysis on job if requested
     """
+
     if job.freqopt == 'numforce':
         newdir = os.path.join(job.indir, 'numforce')
     else:
         newdir = job.indir
-    
+
     os.chdir(newdir)
     freeh = Freeh()
-    freeh.run_freeh()
-    job.params, job.data = proc_freeh()
-    write_freeh(job)
+    logging.debug('doing freeh')
+    try:
+        freeh.run_freeh()
+    except Exception as e:
+        logging.warn('freeh failed with exception {}'.format(e))
+    else:
+        logging.debug('freeh completed')
+        job.params, job.data = proc_freeh()
+
+    os.chdir(TOPDIR)
+
+    if job.params:
+        write_freeh(job)
+        logging.debug('freeh written')
     
 
 def write_stats(job):
@@ -458,9 +491,9 @@ def write_freeh(job):
         #write the header to the file
         try:
             with open('freeh.txt', 'w') as f:
-                f.write("{name:^16}{directory:^20}{zpe:^14}{t:^8}" \
-                        "{p:^11}{qtrans:^12}{ln(qrot):^10}" \
-                        "{pot:^14}{eng:^14}{ent:^14}{cv:^14}{cp:^14}"
+                f.write("{name:^16}{directory:^20}{zpe:^14}{t:^10}" \
+                        "{p:^11}{qtrans:^12}{qrot:^10}" \
+                        "{pot:^14}{eng:^14}{entr:^20}{cv:^14}{cp:^14}{enth:^14}\n"
                 .format(
                     name='Name',
                     directory = 'Directory',
@@ -472,11 +505,12 @@ def write_freeh(job):
                     qvib = 'ln(qvib)',
                     pot = 'Pot (kJ/mol)',
                     eng = 'Eng (kJ/mol)',
-                    ent = 'Ent (kJ/mol/K)',
+                    entr = 'Entropy (kJ/mol/K)',
                     cv = 'Cv (kJ/molK)',
-                    cp = 'Cp (kJ/molK)'
+                    cp = 'Cp (kJ/molK)',
+                    enth = 'Enthalpy (kJ/mol)'
                 ))
-                f.write('\n')
+                logging.debug("Wrote freeh titles")
         except IOError as e:
             logging.warning("Error preparing freeh file: {}".format(e))
         except Exception as e:
@@ -491,15 +525,16 @@ def write_freeh(job):
     qvib = job.data['qvib']
     pot = job.data['pot']
     eng = job.data['eng']
-    ent = job.data['ent']
+    entr = job.data['entr']
     cv = job.data['cv']
     cp = job.data['cp']
+    enth = job.data['enth']
     
     try:
-        with open('freeh.txt', 'w') as f:
-            f.write("{name:^16}{directory:^20}{zpe:^14}{t:^8}" \
-                    "{p:^11}{qtrans:^12}{ln(qrot):^10}" \
-                    "{pot:^14}{eng:^14}{ent:^14}{cv:^14}{cp:^14}"
+        with open('freeh.txt', 'a') as f:
+            f.write("{name:^16}{directory:^20}{zpe:^14}{t:^10}" \
+                    "{p:^11}{qtrans:^12}{qrot:^10}" \
+                    "{pot:^14}{eng:^14}{entr:^20}{cv:^14}{cp:^14}{enth:^14}\n"
             .format(
                 name=name,
                 directory = directory,
@@ -511,33 +546,32 @@ def write_freeh(job):
                 qvib = qvib[0],
                 pot = pot[0],
                 eng = eng[0],
-                ent = ent[0],
+                entr = entr[0],
                 cv = cv[0],
-                cp = cp[0]
+                cp = cp[0],
+                enth = enth[0]
             ))
-            f.write('\n')
             if len(t) > 1: #don't rewrite name/zpe for each line
                 for i in range(1, len(t)):
                     f.write("{name:^16}{directory:^20}{zpe:^14}{t:^8}" \
-                    "{p:^11}{qtrans:^12}{ln(qrot):^10}" \
-                    "{pot:^14}{eng:^14}{ent:^14}{cv:^14}{cp:^14}"
+                    "{p:^11}{qtrans:^12}{qrot:^10}" \
+                    "{pot:^14}{eng:^14}{entr:^20}{cv:^14}{cp:^14}{enth:^14}\n"
                 .format(
                     name='',
                     directory = '',
                     zpe = '',
-                    t = t[0],
-                    p = p[0],
-                    qtrans = qtrans[0],
-                    qrot = qrot[0],
-                    qvib = qvib[0],
-                    pot = pot[0],
-                    eng = eng[0],
-                    ent = ent[0],
-                    cv = cv[0],
-                    cp = cp[0]
+                    t = t[i],
+                    p = p[i],
+                    qtrans = qtrans[i],
+                    qrot = qrot[i],
+                    qvib = qvib[i],
+                    pot = pot[i],
+                    eng = eng[i],
+                    entr = entr[i],
+                    cv = cv[i],
+                    cp = cp[i],
+                    enth = enth[i]
                 ))
-                f.write('\n')
-            f.write('\n')
     except (OSError, IOError) as e:
         logging.warning("Error writing freeh file: {}".format(e))
 
@@ -757,10 +791,11 @@ def freq_submit(job):
     Sends job for frequency analysis of type 'job.freqtype'
     """
     os.chdir(job.indir)
-    try:
-        turbogo_helpers.add_or_modify_control(['$les all 2', '$maxcor 2056'])
-    except turbogo_helpers.ControlFileError:
-        logging.info("Error modifying control file. Attempting to continue.")
+    if job.freqopt == 'aoforce':
+        try:
+            turbogo_helpers.add_or_modify_control(['$les all 2', '$maxcor 2056'])
+        except turbogo_helpers.ControlFileError:
+            logging.warn("Error modifying control file. Attempting to continue.")
     job.job.jobtype = job.freqopt
     script = submit_script_prepare(job.job)
     try:
@@ -789,12 +824,13 @@ def main():
                         help='Run more verbose (show debugging info)')
     group.add_argument('-q', '--quiet', action="store_true",
                         help='Run less verbose (show only warnings)')
-    parser.add_argument('-s', '--solvent', help='Show solvents known to Turbocontrol')
+    parser.add_argument('-s', '--solvent', dest="solvent", action="store_true",
+                        help='Show solvents known to Turbocontrol')
     args = parser.parse_args()
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(logging.INFO)
     if args.solvent:
-        print sorted(turbogo_helpers.DIELECTRICS.keys())
+        print "\n".join(sorted(turbogo_helpers.DIELECTRICS.keys(), key=lambda s: s.lower()))
         exit()
     if args.verbose:
         ch.setLevel(logging.DEBUG)
@@ -816,7 +852,7 @@ def main():
         inputfiles.append(str(os.path.join(key, inputdirs[key][0])))
 
     logging.info("Inputs found at:\n{}".format(
-        turbogo_helpers.list_str(inputfiles.sort())))
+        turbogo_helpers.list_str(sorted(inputfiles))))
 
     jobs = list()
     for key in inputdirs:

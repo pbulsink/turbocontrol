@@ -7,6 +7,7 @@ import logging
 import re
 import unicodedata
 import os
+import sys
 import time
 from subprocess import Popen, PIPE
 
@@ -39,7 +40,8 @@ ELEMENTS = ['Ac', 'Ag', 'Al', 'Am', 'Ar', 'As', 'At', 'Au', 'B', 'Ba', 'Be',
             'Uut', 'V', 'W', 'Xe', 'Y', 'Yb', 'Zn', 'Zr']
 
 ARGLIST = ['nproc', 'nprocessors', 'nprocshared', 'arch', 'architecture',
-           'para_arch', 'maxcycles', 'nocontrolmod', 'autocontrolmod', 'rt']
+           'para_arch', 'maxcycles', 'nocontrolmod', 'autocontrolmod', 'rt',
+           'cosmo']
 DISCARDARGLIST = ['nosave', 'rwf', 'chk', 'mem']
 ROUTELIST = ['opt', 'freq', 'ts', 'td', 'prep', 'sp']
 FREQOPTS = ['aoforce', 'numforce']
@@ -213,6 +215,26 @@ def check_args(iargs):
                         .format(arg[1])
                         )
 
+            elif arg[0] == 'cosmo':
+                if len(arg) > 1:
+                    if arg[1].lower() in DIELECTRICS:
+                        args['cosmo'] = DIELECTRICS[arg[1].lower()][2]
+                        logging.debug("cosmo set to {}".format(args['cosmo']))
+                    elif arg[1] == '' or arg[1] == 'None':
+                        args['cosmo'] = ''
+                    elif is_positive_float(arg[1]):
+                        args['cosmo'] = arg[1]
+                        logging.debug("cosmo set to {}".format(args['cosmo']))
+                    elif slug(arg[1]) in (slug(key) for key in DIELECTRICS):
+                        #slugs match. good enough.
+                        args['cosmo'] = (DIELECTRICS[key][2] for key in DIELECTRICS if slug(key) == slug[arg[1]])
+                        logging.debug("cosmo set to {}".format(args['cosmo']))
+                    else:
+                        logging.warning("Solvent not found. Ignoring Cosmo")
+                else:
+                    #Cosmo called with no arg = no solvent
+                    args['cosmo'] = ''  # epsilon = infinity is default for cosmo
+
             elif arg[0] == 'autocontrolmod':
                 if not 'mod' in args:
                     args['mod'] = True
@@ -234,7 +256,7 @@ def check_args(iargs):
                         )
 
             elif arg[0] == 'rt':
-                if is_positive_int(arg[1]) and 0 <= arg[1] and arg[1] <= 168:
+                if is_int(arg[1]) and 0 <= int(arg[1]) and int(arg[1]) <= 168:
                     args['rt'] = int(arg[1])
                 else:
                     args['rt'] = 168
@@ -558,7 +580,7 @@ def auto_control_mod(control_add, job):
                     control_add.append('$ricore_slave 1')
 
     #flag for aoforce job AND numforce
-    elif job.jobtype == 'aoforce' or job.jobtype == 'numforce':
+    if job.jobtype == 'aoforce' or job.jobtype == 'numforce':
         if not '$rpacor' in args and not '$maxcor' in args:
             control_add.append('$maxcor 2048')
 
@@ -582,6 +604,9 @@ def auto_control_mod(control_add, job):
 
     if job.disp:
         control_add.append('$disp')
+
+    if job.jobtype == 'opt' or job.jobtype == 'freq' or job.jobtype == 'ts' or job.jobtype == 'sp':
+        control_add.append('$scfiterlimit 100')
 
     return control_add
 
@@ -634,16 +659,14 @@ def write_file(filename, lines):
 
 def check_files_exist(filelist):
     """Checks for the existance of file(s)"""
-    allexist = True
+
     for f in filelist:
         if os.path.isfile(f):
             logging.debug("'{}' file exists.".format(f))
         else:
             logging.debug("'{}' file does not exist".format(f))
-            allexist = False
-            break
-    return allexist
-
+            return False
+        return True
 
 def get_all_active_jobs():
     """Returns all of the jobnumbers from a qstat"""
@@ -687,23 +710,35 @@ def check_env():
 def get_calc_time(jobdir, jobfile):
     """Gets the job optimization time by filetime comparisons in the supplied
     job directory"""
-    return (os.path.getmtime(os.path.join(os.curdir, jobdir, jobfile))
-            - os.path.getmtime(os.path.join(os.curdir, jobdir, 'startfile')))
+    try:
+        start = os.path.getmtime(os.path.join(os.curdir, jobdir, 'startfile'))
+    except OSError:
+        logging.warn('startfile not found in {}.'.format(jobdir))
+        start = False
+    try:
+        end = os.path.getmtime(os.path.join(os.curdir, jobdir, jobfile))
+    except OSError:
+        logging.warn('{} not found in {}.'.format(jobfile, jobdir))
+        end = False
+    if start and end:
+        return end - start
+    else:
+        return False
 
 
 def get_dielectrics(inputfile):
     """Converts dielectric info from input file to python dict"""
     try:
-        with open (inputfile, 'r') as f:
+        with open (os.path.join(os.path.dirname(sys.argv[0]), inputfile), 'r') as f:            
             data = f.readlines()
     except Exception as e:
-        raise FileAccessError("Error reading file {}.".format(filename), e)
+        raise FileAccessError("Error reading file {}.".format(inputfile), e)
     
     dielectrics = dict()
     for i in range(1, len(data)):
         e = data[i].strip().split('\t')
         if not e == ['']:
-            dielectrics[e[0]] =[e[1],e[2],e[3],e[4],e[5],e[6]]
+            dielectrics[e[0].lower()] =[e[1],e[2],e[3],e[4],e[5],e[6]]
     return dielectrics
     
 DIELECTRICS = get_dielectrics('dielectricsolvents.csv')   

@@ -13,9 +13,11 @@ from turbogo_helpers_test import TestArgs, TestChSpin
 from turbogo_helpers_test import TestControlMods, TestGeom
 from turbogo_helpers_test import TestRoute, TestSimpleFuncs
 from turbocontrol_test import TestJobset, TestFindInputs
-from turbocontrol_test import TestJobChecker, TestWriteStats
+from turbocontrol_test import TestJobChecker, TestWriteStats, TestWriteFreeh
 from def_op_test import TestDefine
 from screwer_op_test import TestScrewer
+from freeh_op_test import TestFreeh
+from cosmo_op_test import TestCosmo
 
 if __name__ == "__main__":
     loader = TestLoader()
@@ -37,6 +39,9 @@ if __name__ == "__main__":
         loader.loadTestsFromTestCase(TestWriteStats),
         loader.loadTestsFromTestCase(TestDefine),
         loader.loadTestsFromTestCase(TestScrewer),
+        loader.loadTestsFromTestCase(TestFreeh),
+        loader.loadTestsFromTestCase(TestCosmo),
+        loader.loadTestsFromTestCase(TestWriteFreeh),
         ))
 
     runner = TextTestRunner(verbosity = 2)

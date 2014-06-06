@@ -57,7 +57,7 @@ file                  Read input from gaussian-type input FILE.
 More info on the input files is available in section 4.0, below.
 
 optional arguments:
-```
+```bash
 -h, --help            show this help message and exit
 -v, --verbose         Run more verbose (show debugging info)
 -q, --quiet           Run less verbose (show only warnings)
@@ -69,23 +69,24 @@ TurboGo writes the final coordinates to final_geometry.xyz. If openbabel is inst
 
 
 ##4.0 TurboControl
-TurboControl is a management script called from a parent directory containing sub directories of input files. Each input file must be in its own directory. The input file format must be the same as the input format for TurboGo (listed above), with the extension '.in'. TurboControl reads the inputs and submits the jobs to the computational cluster queue. It then monitors running jobs to determine when the script has finished. If the job is an Opt-Freq, it prepares the frequency analysis and resubmits to the queue.
+TurboControl is a management script called from a parent directory containing sub directories of input files. Each input file must be in its own directory. The input file format must be the same as the input format for TurboGo (listed above), with the extension '.in', '.inp', '.input', '.com', or '.gjf'. TurboControl reads the inputs and submits the jobs to the computational cluster queue. It then monitors running jobs to determine when the script has finished. If the job is an Opt-Freq, it prepares the frequency analysis and resubmits to the queue.
 TurboControl analyzes completed Opt-Freq jobs for true optimization, and attempts to re-run jobs with modified geometries when Transition States are found. TurboControl will not get stuck on the same transition state, but will return a 'stuck' job.
 TurboControl is run with the following syntax:
 
 ```bash
-$ turbocontrol [-h] [-v] [-q]
+$ turbocontrol [-h] [-v/-q] [-s]
 ```
 
 optional arguments:
 
-```
+```bash
 -h, --help            show this help message and exit
 -v, --verbose         Run more verbose (show debugging info)
 -q, --quiet           Run less verbose (show only warnings)
+-s, --solvent         List available solvents for COSMO and quit.
 ```
 
-TurboControl outputs information every 3 hours on the status of the jobs. It writes a logfile (turbogo.log) and may or may not leave other log files in each directory (depending on verbosity level). Ends when the last job finishes or crashes. Requires 1 node or can be run on headnode (minimal resource consumption especially after initial job preparation and submission.)
+TurboControl outputs information every 3 hours on the status of the jobs. It writes a logfile (turbocontrol.log) and may or may not leave other log files in each directory (depending on verbosity level). Ends when the last job finishes or crashes. Requires 1 node or can be run on headnode (minimal resource consumption especially after initial job preparation and submission.)
 
 TurboControl assists with analysis by outputting a stats file as jobs complete. This file contains file details, optimization and frequency timing details, energy, and the first frequency. Additional information can be requested by including the 'freeh' keyword (see below). 
 
@@ -104,6 +105,7 @@ Keywords are as follows:
 - %autocontrolmod - DEFAULT - modify the 'control' file to include optimizations to speed up the job.
 - %nocontrolmod   - do not modify control file as above.
 - %rt             - specify max expected runtime (for any part of job)in hours. Allows backfilling in gridengine queue to speed up job submission. For example, for a 1 hour opt and 4 hour freq, submit at least a rt of 4
+- %cosmo          - use turbomole's COSMO solvation model with the specificed solvent or 'None' to use the ideal solvent (epsilon = infinity). List of available solvents can be shown by running ```turbocontrol -s```
 
 Gaussian args, including %nosave, %rwf=[file], %chk=[file], and %mem=[memory] are silently ignored.
 
@@ -118,6 +120,8 @@ Job types available:
 - freq  - Perform a frequency analysis. Specify method via numforce or aoforce  
   - default = numforce
 - sp    - Perform a single point energy calculation.
+  - cannot be combined with Opt or Freq
+- ts    - Perform a transition state search to find 1 imaginary vibration
   - cannot be combined with Opt or Freq
 - prep  - Prepare the job but do not submit to queue  
   - cannot be combined with Opt or Freq
@@ -144,7 +148,7 @@ Geometry in xyz coordinate format: Element xcoord ycoord zcoord
 ### 5.6 Additional control File Modifications
 Additional lines to be added or removed from control. Lines automatically added are, as required,:
 
-```
+```bash
 $ricore 0
 $paroptions ga_memperproc 900000000000000 900000000000
 $parallel_parameters maxtask=10000
@@ -158,7 +162,7 @@ Additional lines may be added, or lines removed, by placing them after the geome
 ###5.7 Example Input Files
 An example input file for benzene:
 
-```
+```bash
 %nproc=4
 %arch=GA
 %maxcycles=250
@@ -197,7 +201,7 @@ Won't Fix includes:
 
 ## 7.0 ToDo
 High Priority:
-- Transition state and TD-DFT calculations may require expansion of the def-op script or modification of input files.
+- none
     
 Medium Priority:
 - none
@@ -232,39 +236,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+## 9.0 Citing TurboControl
+TurboControl, Turbogo, or any other parts of this code may be cited as:
 
-## 9.0 Code Details
+Bulsink, Philip. TurboControl, v. 1.1.0. http://github.org/pbulsink/turbocontrol (accessed June 2014)
+
+Change the version number to match the version that you used, and change the accessed date to when you installed or downloaded TurboControl. 
+
+
+## 10.0 Code Details
 Test Coverage:
 
 Name                 Statements Missing Excluded Coverage
-def_op	                272	    203	      1	        25%
-def_op_test	            17	    1	        0	        94%
-screwer_op	            71	    25	      1	        65%
-screwer_op_test	        11	    1	        0	        91%
-test_all	              16      0	        0	        100%
-turbocontrol	          384	    240	      0	        38%
-turbocontrol_test	      188	    21	      0	        89%
-turbogo	                294	    125	      0	        57%
-turbogo_helpers	        306	    42	      0	        86%
-turbogo_helpers_test	  247	    2	        0	        99%
-turbogo_test	          84	    1	        0	        99%
-TOTAL:	                1890	  661	      2	        65.0
+cosmo_op	                  106	    70	      1	    34%
+cosmo_op_test	               17	     1	      0	    94%
+def_op	                    302	   226	      1	    25%
+def_op_test	                 20	     1	      0	    95%
+freeh_op	                  162	    55	      1	    66%
+freeh_op_test	               27	     1	      0	    96%
+screwer_op	                 71	    25	      1	    65%
+screwer_op_test	             11	     1	      0	    91%
+test_all	                   18	     0	      0	   100%
+turbocontrol	              537	   319	      0	    41%
+turbocontrol_test	          245	    24	      0	    90%
+turbogo	                    343	   132	      0	    62%
+turbogo_helpers	            383	    52	      0	    86%
+turbogo_helpers_test	      274	     2	      0	    99%
+turbogo_test	               98	     1	      0     99%
+                           2614	   910	      4	    65%
 
-Results are low for def_op, screwer_op, turbocontrol, and turbogo because they
-contain many lines of interacting with GridEngine or Turbomole. Testing is
-performed via monitoring the status of the scripts as they run in real
-conditions.
+Results are low for def_op, screwer_op, cosmo_op, freeh_op, turbocontrol, and turbogo because they contain many lines of interacting with GridEngine or Turbomole. Testing is performed via monitoring the status of the scripts as they run in real conditions. 
 
 Pylint Scores:
-test_all.py             - 2.50/10
-turbogo.py              - 8.28/10
-turbogo_test.py         - 7.14/10
-turbocontrol.py         - 8.42/10
-turbocontrol_test.py    - 8.19/10
-turbogo_helpers.py      - 9.08/10
-turbogo_helpers_test.py - 7.85/10
-def_op.py               - 8.23/10
-def_op_test.py          - 6.11/10
+test_all.py             - 2.22/10
+turbogo.py              - 8.80/10
+turbogo_test.py         - 6.97/10
+turbocontrol.py         - 8.55/10
+turbocontrol_test.py    - 7.18/10
+turbogo_helpers.py      - 8.81/10
+turbogo_helpers_test.py - 7.45/10
+def_op.py               - 8.18/10
+def_op_test.py          - 5.71/10
 screwer_op.py           - 7.36/10
 screwer_op_test.py      - 6.67/10
+freeh_op.py             - 8.71/10
+freeh_op_test.py        - 6.79/10
+cosmo_op.py             - 8.22/10
+cosmo_op_test.py        - 6.67/10
 

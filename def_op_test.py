@@ -3,7 +3,7 @@
 import unittest
 import os
 from os import path
-from def_op import Define
+from def_op import Define, DefineError
 from turbogo import Job
 
 
@@ -15,7 +15,10 @@ class TestDefine(unittest.TestCase):
 
     def test_start_define(self):
         """Test starting define"""
-        self.assertEqual(self.define.start_define(), None)
+        with self.assertRaises(DefineError) as cm:
+            self.define.start_define()
+        the_exception = cm.exception
+        self.assertEqual(the_exception.value, "Error starting Define The command was not found or was not executable: define. Check the environment is set up")
 
     def test_setup_define(self):
         """Test parsing the variables"""
