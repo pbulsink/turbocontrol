@@ -243,6 +243,7 @@ Bulsink, Philip. TurboControl, v. 1.1.0. http://github.org/pbulsink/turbocontrol
 
 Change the version number to match the version that you used, and change the accessed date to when you installed or downloaded TurboControl. 
 
+You may also reference by DOI:
 
 ## 10.0 Code Details
 Test Coverage:
