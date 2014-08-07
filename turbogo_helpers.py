@@ -619,7 +619,7 @@ def slug(s):
         Catalyst Bidentate Chloride 3   --> catalyst-bidentate-chloride-3
         Catalyst + Gasses               --> catalyst-gasses
     """
-    
+
     s.replace("'", '')
     slug = unicodedata.normalize('NFKD', unicode(s))
     slug = slug.encode('ascii', 'ignore').lower()
@@ -729,17 +729,18 @@ def get_calc_time(jobdir, jobfile):
 def get_dielectrics(inputfile):
     """Converts dielectric info from input file to python dict"""
     try:
-        with open (os.path.join(os.path.dirname(sys.argv[0]), inputfile), 'r') as f:            
+        with open(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
+                               inputfile), 'r') as f:
             data = f.readlines()
     except Exception as e:
         raise FileAccessError("Error reading file {}.".format(inputfile), e)
-    
+
     dielectrics = dict()
     for i in range(1, len(data)):
         e = data[i].strip().split('\t')
         if not e == ['']:
             dielectrics[e[0].lower()] =[e[1],e[2],e[3],e[4],e[5],e[6]]
     return dielectrics
-    
-DIELECTRICS = get_dielectrics('dielectricsolvents.csv')   
+
+DIELECTRICS = get_dielectrics('dielectricsolvents.csv')
 
