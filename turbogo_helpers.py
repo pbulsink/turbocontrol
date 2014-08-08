@@ -160,6 +160,8 @@ def check_args(iargs):
             if arg[0] == 'arch' or arg[0] == 'architecture' or arg[0] == 'para_arch':
                 if arg[1] in PARA_ARCH:
                     args[arg[0].lower()] = arg[1]
+                elif arg[1].upper() in PARA_ARCH:
+                    args[arg[0].lower()] = arg[1].upper()
                 else:
                     logging.warning("Invalid value of '{}' for {}.".format(
                         arg[1],
@@ -621,7 +623,10 @@ def slug(s):
     """
     
     s.replace("'", '')
-    slug = unicodedata.normalize('NFKD', unicode(s))
+    try:
+        slug = unicodedata.normalize('NFKD', unicode(s))
+    except UnicodeDecodeError:
+        return ''   
     slug = slug.encode('ascii', 'ignore').lower()
     slug = re.sub(r'[^a-z0-9]+', '-', slug).strip('-')
     slug = re.sub(r'[-]+', '-', slug)

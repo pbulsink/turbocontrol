@@ -390,7 +390,7 @@ export HOSTS_FILE=`readlink -f hosts_file`
         else:
             jobcommand = 'dscf\ngrad\njobex -trans'
         if job.iterations:
-            jobcommant += ' -c {}'.format(job.iterations)
+            jobcommand += ' -c {}'.format(job.iterations)
         jobcommand += ' > ts.out'
         jobcommand += '\nt2x > optimization.xyz\nt2x -c > final_geometry.xyz'
 
@@ -490,7 +490,7 @@ def jobrunner(infile = None, job = None):
     logging.debug('Working with {}.'.format(job.name))
     write_coord(job)
     logging.debug('coord written')
-    if job.jobtype == 'opt' or job.jobtype == 'optfreq' or job.jobtype == 'ts' or job.jobtype == 'sp':
+    if job.jobtype == 'opt' or job.jobtype == 'optfreq' or job.jobtype == 'ts' or job.jobtype == 'sp' or job.jobtype == 'prep':
         defstart = time.time()
         run_define(job)
         logging.debug('define complete.')
