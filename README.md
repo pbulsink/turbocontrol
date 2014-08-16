@@ -201,10 +201,10 @@ Won't Fix includes:
 
 ## 7.0 ToDo
 High Priority:
-- none
+- Distutil Inclusion
     
 Medium Priority:
-- none
+- MP2 and CC2 calculations
     
 Low Priority:
 - Presentation of badly formatted input files to allow for modification and resubmission to reduce loss by typos

@@ -17,6 +17,7 @@ import argparse
 from screwer_op import Screwer
 from freeh_op import Freeh, proc_freeh
 
+
 try:
     import openbabel
     from formatter import convert_filetype
@@ -319,11 +320,14 @@ def ensure_not_ts(job):
                     readin = True
             if job.freqopt == 'numforce':
                 os.chdir(os.pardir)
-                shutil.rmtree(os.path.join(os.curdir, 'numforce'))
-            turbogo_helpers.write_file('coord', newcoord)
+                turbogo_helpers.write_file('coord', newcoord)
+                try:  # Better to remove numforce, if not no biggie
+                    os.remove(os.path.join(os.curdir, 'control'))
+                    shutil.rmtree(os.path.join(os.curdir, 'numforce'))
+                except OSError:
+                    pass
             try:
-                job.job.jobtype = 'optfreq'
-                job.jobid = submit_job(job.job, submit_script_prepare(job.job))
+                job.jobid, job.freqopt, job.name, job.jobtype = jobrunner(job=self.job)
                 job.curstart = time()
             except Exception as e:
                 logging.warning("Error {} resubmitting job {}.".format(
