@@ -8,22 +8,23 @@ prepare for frequency analysis via NumForce or aoforce.
 
 from turbogo import jobrunner, check_input_file, submit_script_prepare
 from turbogo import JobLogicError, submit_job
-import turbogo_helpers
+import turbocontrol.turbogo_helpers
 import os, sys, shutil
 from time import sleep, strftime, time
 from datetime import timedelta
 import logging
 import argparse
-from screwer_op import Screwer
-from freeh_op import Freeh, proc_freeh
+from turbocontrol.screwer_op import Screwer
+from turbocontrol.freeh_op import Freeh, proc_freeh
 
 
 try:
     import openbabel
-    from formatter import convert_filetype
-    reformat = True
 except ImportError:
     reformat = False
+else:
+    from turbocontrol.formatter import convert_filetype
+    reformat = True
 
 TOPDIR = os.path.abspath(os.path.dirname(os.curdir))
 

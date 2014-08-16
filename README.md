@@ -1,4 +1,4 @@
-# TURBOCONTROL and TURBOGO 1.1.0
+# TURBOCONTROL and TURBOGO 2.0
 
 TurboControl is a series of scripts to run Turbomole jobs from Gaussian style inputs.
 
@@ -6,12 +6,15 @@ Contents:
 
 1.  Introduction
 2.  System Requirements
-3.  TurboGo
-4.  TurboControl
-5.  Input Files
-6.  Known Issues
-7.  To Do
-8.  License
+3.  Installation
+4.  TurboGo
+5.  TurboControl
+6.  Input Files
+7.  Known Issues
+8.  To Do
+9.  License
+10. Citing TurboControl
+11. Code Details
 
 
 ## 1.0 Introduction
@@ -39,8 +42,10 @@ Prior to running TurboGo or TurboControl, a valid installation of Turbomole must
 $ source $TURBODIR/Config_turbo_env
 ```
 
+## 3.0 Installation
+Installation of TurboControl is very simple. Just extract the .tar.gz file availabile from the code repository [here](http://github.com/pbulsink/turbocontrol/dist/). Alternately, the source may be downloaded from http://github.com/pbulsink/turbocontrol and used without installation.
 
-##3.0 TurboGo
+## 4.0 TurboGo
 TurboGo is a script fun on an input file. It generates the inputs required for Turbomole jobs, and submits the job to the GridEngine queue before quitting.
 TurboGo is run with the following syntax:
 
@@ -68,7 +73,7 @@ TurboGo saves a log file (turbogo.log) in the directory in which it is run. A se
 TurboGo writes the final coordinates to final_geometry.xyz. If openbabel is installed, it will also write finalgeom.mol. The entire optimization is written to optimization.xyz for viewing with a molecular viewer, such as vmd.
 
 
-##4.0 TurboControl
+## 5.0 TurboControl
 TurboControl is a management script called from a parent directory containing sub directories of input files. Each input file must be in its own directory. The input file format must be the same as the input format for TurboGo (listed above), with the extension '.in', '.inp', '.input', '.com', or '.gjf'. TurboControl reads the inputs and submits the jobs to the computational cluster queue. It then monitors running jobs to determine when the script has finished. If the job is an Opt-Freq, it prepares the frequency analysis and resubmits to the queue.
 TurboControl analyzes completed Opt-Freq jobs for true optimization, and attempts to re-run jobs with modified geometries when Transition States are found. TurboControl will not get stuck on the same transition state, but will return a 'stuck' job.
 TurboControl is run with the following syntax:
@@ -91,10 +96,10 @@ TurboControl outputs information every 3 hours on the status of the jobs. It wri
 TurboControl assists with analysis by outputting a stats file as jobs complete. This file contains file details, optimization and frequency timing details, energy, and the first frequency. Additional information can be requested by including the 'freeh' keyword (see below). 
 
 
-## 5.0 Input File Format
+## 6.0 Input File Format
 The input file format is similar to that well known by Gaussian users. A series of keywords, one per line and indicated by a '%', is followed by the 'route card' (specific job information). Charge and spin is indicated, then the molecule is shown in Cartesian format. This is followed by optional modifications to the Turbomole Control file. Note the location of blank lines in the example (Section 5.7).
 
-### 5.1 Keywords
+### 6.1 Keywords
 Keywords are as follows:
 
 - %nproc          - number of processors to use for the calculation job.
@@ -109,7 +114,7 @@ Keywords are as follows:
 
 Gaussian args, including %nosave, %rwf=[file], %chk=[file], and %mem=[memory] are silently ignored.
 
-### 5.2 Route Card Options
+### 6.2 Route Card Options
 Route cards take the form of the following:
 
 \# [jobtype(s)] [joboption(s)]
@@ -135,17 +140,17 @@ Job options available:
 - numforce  - Use numforce for frequency jobs
 - freeh     - Use Turbomole's 'freeh' thermodynamics data script to extract energy infos after frequency analysis
 
-### 5.3 Title
+### 6.3 Title
 Following the Route cards, a blank line is added, then a line containing the title of the calculation. This can include any characters, spaces, etc., remaining on only one line. This is followed by a blank line.
 
-### 5.4 Charge and Spin
+### 6.4 Charge and Spin
 Charge and spin are listed as two numbers:
 charge spin (eg:0 1)
 
-### 5.5 Geometry
+### 6.5 Geometry
 Geometry in xyz coordinate format: Element xcoord ycoord zcoord
 
-### 5.6 Additional control File Modifications
+### 6.6 Additional control File Modifications
 Additional lines to be added or removed from control. Lines automatically added are, as required,:
 
 ```bash
@@ -159,7 +164,7 @@ $maxcor 2048
 
 Additional lines may be added, or lines removed, by placing them after the geometry with a $ (for addition) or -$ (for removal).
 
-###5.7 Example Input Files
+### 6.7 Example Input Files
 An example input file for benzene:
 
 ```bash
@@ -191,7 +196,7 @@ $disp
 ```
 
 
-## 6.0 Known Issues
+## 7.0 Known Issues
 Current Known issues are:
 - none
 
@@ -199,7 +204,7 @@ Won't Fix includes:
 - Software doesn't avoid lone proton jobs (H+), but crashes them out
 
 
-## 7.0 ToDo
+## 8.0 ToDo
 High Priority:
 - Distutil Inclusion
     
@@ -211,7 +216,7 @@ Low Priority:
 - Expand inclusion of more basis sets, mix basis sets for different atoms.
 
 
-## 8.0 License
+## 9.0 License
 All third party software is a registered trademark of their respective creators. Use of third party software via this software is limited by the conditions as laid out by the respective companies. License to use this software in no way acts as a license to use any other separate referenced software.
 
 The MIT License (MIT)
@@ -236,34 +241,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## 9.0 Citing TurboControl
+## 10.0 Citing TurboControl
 TurboControl, Turbogo, or any other parts of this code may be cited as:
 
-Bulsink, Philip. TurboControl, v. 1.1.0. http://github.org/pbulsink/turbocontrol (accessed June 2014)
+Bulsink, Philip. TurboControl, v. 2.0. http://github.org/pbulsink/turbocontrol (accessed August 2014)
 
 Change the version number to match the version that you used, and change the accessed date to when you installed or downloaded TurboControl. 
 
 You may also reference by DOI: 10.5281/zenodo.10333
 
-## 10.0 Code Details
+## 11.0 Code Details
 Test Coverage:
 
 Name                 Statements Missing Excluded Coverage
 cosmo_op	                  106	    70	      1	    34%
-cosmo_op_test	               17	     1	      0	    94%
+test_cosmo_op	               17	     1	      0	    94%
 def_op	                    302	   226	      1	    25%
-def_op_test	                 20	     1	      0	    95%
+test_def_op	                 20	     1	      0	    95%
 freeh_op	                  162	    55	      1	    66%
-freeh_op_test	               27	     1	      0	    96%
+test_freeh_op	               27	     1	      0	    96%
 screwer_op	                 71	    25	      1	    65%
-screwer_op_test	             11	     1	      0	    91%
+test_screwer_op	             11	     1	      0	    91%
 test_all	                   18	     0	      0	   100%
 turbocontrol	              537	   319	      0	    41%
-turbocontrol_test	          245	    24	      0	    90%
+test_turbocontrol	          245	    24	      0	    90%
 turbogo	                    343	   132	      0	    62%
 turbogo_helpers	            383	    52	      0	    86%
-turbogo_helpers_test	      274	     2	      0	    99%
-turbogo_test	               98	     1	      0     99%
+test_turbogo_helpers	      274	     2	      0	    99%
+test_turbogo	               98	     1	      0     99%
                            2614	   910	      4	    65%
 
 Results are low for def_op, screwer_op, cosmo_op, freeh_op, turbocontrol, and turbogo because they contain many lines of interacting with GridEngine or Turbomole. Testing is performed via monitoring the status of the scripts as they run in real conditions. 
@@ -271,17 +276,17 @@ Results are low for def_op, screwer_op, cosmo_op, freeh_op, turbocontrol, and tu
 Pylint Scores:
 test_all.py             - 2.22/10
 turbogo.py              - 8.80/10
-turbogo_test.py         - 6.97/10
+test_turbogo.py         - 6.97/10
 turbocontrol.py         - 8.55/10
-turbocontrol_test.py    - 7.18/10
+test_turbocontrol.py    - 7.18/10
 turbogo_helpers.py      - 8.81/10
-turbogo_helpers_test.py - 7.45/10
+test_turbogo_helpers.py - 7.45/10
 def_op.py               - 8.18/10
-def_op_test.py          - 5.71/10
+test_def_op.py          - 5.71/10
 screwer_op.py           - 7.36/10
-screwer_op_test.py      - 6.67/10
+test_screwer_op.py      - 6.67/10
 freeh_op.py             - 8.71/10
-freeh_op_test.py        - 6.79/10
+test_freeh_op.py        - 6.79/10
 cosmo_op.py             - 8.22/10
-cosmo_op_test.py        - 6.67/10
+test_cosmo_op.py        - 6.67/10
 

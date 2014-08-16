@@ -5,7 +5,7 @@ import unittest
 import os
 from os import path
 from turbocontrol import *
-from turbogo_helpers import write_file
+from turbocontrol.turbogo_helpers import write_file
 from turbogo import Job
 
 

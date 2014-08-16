@@ -3,7 +3,7 @@
 
 import unittest
 import os
-from turbogo_helpers import *
+from turbocontrol.turbogo_helpers import *
 from turbogo import Job
 
 class TestSimpleFuncs(unittest.TestCase):

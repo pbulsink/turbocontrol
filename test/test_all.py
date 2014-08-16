@@ -7,17 +7,17 @@ Runs all test files
 """
 
 from unittest import TestLoader, TextTestRunner, TestSuite
-from turbogo_test import TestControlEdit, TestJob, TestSetup
-from turbogo_test import TestWriteCoord, TestSubmitScriptPrep
-from turbogo_helpers_test import TestArgs, TestChSpin
-from turbogo_helpers_test import TestControlMods, TestGeom
-from turbogo_helpers_test import TestRoute, TestSimpleFuncs
-from turbocontrol_test import TestJobset, TestFindInputs
-from turbocontrol_test import TestJobChecker, TestWriteStats, TestWriteFreeh
-from def_op_test import TestDefine
-from screwer_op_test import TestScrewer
-from freeh_op_test import TestFreeh
-from cosmo_op_test import TestCosmo
+from test_turbogo import TestControlEdit, TestJob, TestSetup
+from test_turbogo import TestWriteCoord, TestSubmitScriptPrep
+from test_turbogo_helpers import TestArgs, TestChSpin
+from test_turbogo_helpers import TestControlMods, TestGeom
+from test_turbogo_helpers import TestRoute, TestSimpleFuncs
+from test_turbocontrol import TestJobset, TestFindInputs
+from test_turbocontrol import TestJobChecker, TestWriteStats, TestWriteFreeh
+from test_def_op import TestDefine
+from test_screwer_op import TestScrewer
+from test_freeh_op import TestFreeh
+from test_cosmo_op import TestCosmo
 
 if __name__ == "__main__":
     loader = TestLoader()

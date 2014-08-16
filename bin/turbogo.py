@@ -13,9 +13,9 @@ import logging
 import sys
 from subprocess import Popen, PIPE
 
-import def_op
-import cosmo_op
-import turbogo_helpers
+import turbocontrol.def_op
+import turbocontrol.cosmo_op
+import turbocontrol.turbogo_helpers
 import os
 
 DEFAULT_FREQ = 'numforce'

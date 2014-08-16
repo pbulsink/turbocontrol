@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-from screwer_op import Screwer
+from turbocontrol.screwer_op import Screwer
 
 class TestScrewer(unittest.TestCase):
     """Tests the Jobset Class"""

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-from cosmo_op import Cosmo, CosmoError
+from turbocontrol.cosmo_op import Cosmo, CosmoError
 from turbogo import Job
 
 class TestCosmo(unittest.TestCase):

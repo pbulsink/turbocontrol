@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 """
 Turbogo has to call cosmoprep. Cosmoprep is a huge mess of pexpect calls and

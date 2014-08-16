@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import unittest
-from freeh_op import Freeh, proc_freeh, FreehError
-from turbogo_helpers import write_file
+from turbocontrol.freeh_op import Freeh, proc_freeh, FreehError
+from turbocontrol.turbogo_helpers import write_file
 import os
 
 class TestFreeh(unittest.TestCase):

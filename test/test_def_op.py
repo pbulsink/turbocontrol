@@ -3,7 +3,7 @@
 import unittest
 import os
 from os import path
-from def_op import Define, DefineError
+from turbocontrol.def_op import Define, DefineError
 from turbogo import Job
 
 
