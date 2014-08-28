@@ -198,11 +198,12 @@ $disp
 
 ## 7.0 Known Issues
 Current Known issues are:
-- none
+- testing issues
 
 Won't Fix includes:
 - Software doesn't avoid lone proton jobs (H+), but crashes them out
 
+Please use the Issue Tracker to post suggestions, enhancements, bugs, and modifications.
 
 ## 8.0 ToDo
 High Priority:
