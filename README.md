@@ -208,6 +208,7 @@ Please use the Issue Tracker to post suggestions, enhancements, bugs, and modifi
 ## 8.0 ToDo
 High Priority:
 - Distutil Inclusion
+- Merge TurboControl and TurboGo to one file, allowing Distutils to work.
     
 Medium Priority:
 - MP2 and CC2 calculations
@@ -271,6 +272,14 @@ turbogo_helpers	            383	    52	      0	    86%
 test_turbogo_helpers	      274	     2	      0	    99%
 test_turbogo	               98	     1	      0     99%
                            2614	   910	      4	    65%
+
+
+Tests:
+Master:
+[![Build Status](https://travis-ci.org/pbulsink/turbocontrol.svg?branch=master)](https://travis-ci.org/pbulsink/turbocontrol)
+
+Dev:
+[![Build Status](https://travis-ci.org/pbulsink/turbocontrol.svg?branch=dev)](https://travis-ci.org/pbulsink/turbocontrol)
 
 Results are low for def_op, screwer_op, cosmo_op, freeh_op, turbocontrol, and turbogo because they contain many lines of interacting with GridEngine or Turbomole. Testing is performed via monitoring the status of the scripts as they run in real conditions. 
 
